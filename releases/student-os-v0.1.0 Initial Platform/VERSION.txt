@@ -1,0 +1,4 @@
+Student OS v0.1.0
+Initial platform: orchestrator, 3 MCP servers, prioritizer, API, mock mode
+
+Feature snapshot: files present reflect the project's scope at this version. The newest archive (v0.10.0) is the canonical runnable project.

@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+pytest-cache-files-*/
+.venv/
+venv/
+env/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Secrets & local config (recursive)
+.env
+.env.*
+!.env.example
+credentials.json
+token.json
+.google_token.json
+*.pem
+
+# Local database & runtime logs
+*.db
+*.db-shm
+*.db-wal
+student_os.db
+debug_backend.txt
+mcp_trace.log
+mcp_debug.log
+
+# Temp / Lock files
+*.tmp
+.~lock*
+~*
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

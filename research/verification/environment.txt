@@ -1,0 +1,83 @@
+STUDENT OS - VERIFICATION ENVIRONMENT
+======================================
+Generated at: 2026-09-26T17:28:30Z
+Audit directory: C:\Users\aggar\internship\research\verification
+
+1. OPERATING SYSTEM
+-------------------
+OS: Windows (win32)
+Release: Windows 11 / Windows NT 10.0.26100
+Machine Architecture: AMD64 / x86_64
+Default Console Code Page: cp1252 (requires PYTHONIOENCODING=utf-8 for unicode output like Greek Delta)
+
+2. PYTHON RUNTIME
+-----------------
+Active audit venv python: C:\Users\aggar\internship\research\verification\.venv\Scripts\python.exe
+Python version: Python 3.11.9 (tags/v3.11.9:de5405b) [MSC v.1938 64 bit (AMD64)]
+System interpreter: C:\Users\aggar\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\python.exe
+
+3. PIP FREEZE (Isolated Audit Virtual Environment)
+---------------------------------------------------
+annotated-types==0.8.0
+anthropic==0.42.0
+anyio==4.15.1
+cachetools==5.5.2
+certifi==2026.7.22
+cffi==2.1.1
+charset-normalizer==3.5.1
+click==8.5.0
+colorama==0.4.6
+cryptography==48.0.0
+distro==1.9.0
+et-xmlfile==2.0.0
+fastapi==0.115.6
+google-auth==2.37.0
+google-auth-oauthlib==1.2.1
+greenlet==3.5.6
+h11==0.16.0
+httpcore==1.0.9
+httptools==0.8.0
+httpx==0.28.1
+httpx-sse==0.4.3
+idna==3.20
+iniconfig==2.3.0
+jiter==0.17.0
+mcp==1.2.0
+numpy==2.2.6
+oauthlib==3.3.1
+openpyxl==3.1.5
+packaging==26.3
+pluggy==1.6.0
+pyasn1==0.6.4
+pyasn1-modules==0.4.2
+pycparser==3.0
+pydantic==2.10.4
+pydantic-core==2.27.2
+pydantic-settings==2.7.0
+pytest==8.3.4
+pytest-asyncio==0.25.0
+python-dotenv==1.0.1
+pyyaml==6.0.3
+redis==5.2.1
+requests==2.34.2
+requests-oauthlib==2.0.0
+rsa==4.9.1
+scipy==1.16.3
+sniffio==1.3.1
+sqlalchemy==2.0.36
+sse-starlette==3.0.3
+starlette==0.41.3
+typing-extensions==4.16.0
+urllib3==2.8.0
+uvicorn==0.34.0
+watchfiles==1.3.0
+websockets==17.1
+
+4. DEPENDENCY AUDIT NOTES
+-------------------------
+- All packages listed in backend/requirements.txt are strictly pinned with '==' specifications.
+- Missing dependencies observed in repo scripts:
+  * openpyxl: Required by eval/annotator_agreement.py (line 39: from openpyxl import load_workbook). Not in requirements.txt. Installed openpyxl==3.1.5 for the audit.
+  * scipy: Checked as optional in tests/test_stats.py (line 52: pytest.importorskip("scipy.stats")). Not in requirements.txt. System python provides scipy==1.16.3.
+- Windows Console Encoding Caveat:
+  * eval/run_eval.py line 219 prints the unicode character '\u0394' (Delta). Under default Windows console cp1252, this throws UnicodeEncodeError unless PYTHONIOENCODING=utf-8 is set.

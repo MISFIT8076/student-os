@@ -1,0 +1,282 @@
+================================================================================
+ STUDENT OS - ARCHITECTURE AND CODE MAP
+================================================================================
+Generated at: 2026-09-26T17:28:30Z
+Audit Target: C:\Users\aggar\Desktop\student-os\backend
+
+1. REPOSITORY DIRECTORY TREE (2-3 LEVELS)
+----------------------------------------
+backend/
+├── app/                                 Core application package
+│   ├── actions.py                       Propose-confirm guardrail for write actions
+│   ├── cache.py                         In-memory and Redis item cache
+│   ├── config.py                        Pydantic Settings and environment management
+│   ├── main.py                          FastAPI entrypoint and middleware
+│   ├── notifier.py                      Notification formatting and Telegram/SMTP dispatcher
+│   ├── schemas.py                       Shared Pydantic domain models (ActionItem, Briefing, etc.)
+│   ├── security.py                      Regex injection filter, Fernet token vault, scope audit
+│   ├── store.py                         SQLAlchemy persistence for feedback and progress
+│   ├── intelligence/                    Algorithmic & ML components
+│   │   ├── features.py                  Feature extraction and vectorization (10 features)
+│   │   ├── learned_ranker.py            Ridge regression ranker loader and prediction
+│   │   ├── opportunities.py             Opportunity radar classification & status
+│   │   ├── rag.py                       TF-IDF + cosine similarity note retrieval
+│   │   ├── ranker_weights.json          Trained ridge model artifact
+│   │   ├── scheduler.py                 Day time-blocking and wellbeing pacing
+│   │   └── train.py                     Closed-form ridge regression training script
+│   ├── orchestrator/                    Coordination layer
+│   │   ├── agent.py                     High-level orchestration flows (briefing, chat, schedule)
+│   │   ├── llm.py                       Claude API wrapper and deterministic fallback writer
+│   │   ├── mcp_manager.py               Stdio subprocess manager for external MCP servers
+│   │   ├── prioritizer.py               Rule-based context-aware prioritization ranker
+│   │   └── ranking.py                   Ranker selector (picks prioritizer vs learned)
+│   └── routers/                         FastAPI endpoint controllers
+│       ├── actions.py                   POST /actions/propose, POST /actions/confirm
+│       ├── briefing.py                  GET /briefing, GET /tools
+│       ├── chat.py                      POST /chat
+│       ├── feedback.py                  POST /feedback, GET /stats
+│       ├── notify.py                    GET /notify/preview, POST /notify/send
+│       ├── opportunities.py             GET /opportunities, POST /opportunities/status
+│       ├── schedule.py                  GET /schedule
+│       └── study.py                     GET /study/ask
+├── eval/                                Offline evaluation harness
+│   ├── annotator_agreement.py           Inter-rater reliability (Cohen kappa) calculator
+│   ├── build_dataset.py                 40-scenario benchmark authoring script
+│   ├── dataset.json                     Serialized benchmark scenarios with gold grades
+│   ├── extraction_dataset.json          16 text snippets with gold deadline dates
+│   ├── extraction_eval.py               Precision/Recall/F1 benchmark for date parser
+│   ├── metrics.py                       nDCG@k, P@k, pairwise accuracy, MRR implementations
+│   ├── rankers.py                       Evaluated ranker wrappers (random, source, due, prioritizer)
+│   ├── results.csv                      Cached tabular results from latest run_eval
+│   ├── results.json                     Detailed metrics and significance dictionary
+│   ├── run_eval.py                      Main benchmark runner and statistical significance reporter
+│   ├── security_eval.py                 10-attack regex sanitizer test
+│   └── stats.py                         Wilcoxon, bootstrap CI, rank-biserial, win-tie-loss
+├── mcp_servers/                         Platform adapters (Model Context Protocol)
+│   ├── calendar_server/                 Google Calendar events MCP server
+│   ├── classroom_server/                Google Classroom assignments MCP server
+│   ├── codeforces_server/               Codeforces contest & problem practice MCP server
+│   ├── common/                          Shared MCP utilities
+│   │   ├── extraction.py                Deterministic regex deadline extractor from prose
+│   │   ├── google_auth.py               Google OAuth token flow and scope verifier
+│   │   └── util.py                      Common helpers
+│   ├── github_server/                   GitHub pull requests & issues MCP server
+│   └── gmail_server/                    Gmail inbox and priority mail MCP server
+├── tests/                               Pytest test suite (16 test modules)
+├── servers.json                         MCP server definitions and startup arguments
+└── requirements.txt                     Pinned production and development dependencies
+
+2. TRACE OF THE "/briefing" REQUEST (END-TO-END HOP-BY-HOP)
+-----------------------------------------------------------
+Hop 1: HTTP Client -> FastAPI Router
+  - File & Line: app/routers/briefing.py:14-19 (get_briefing)
+  - Action: Receives GET /briefing?refresh=false. Calls agent.build_briefing(force_refresh=refresh).
+
+Hop 2: Agent Orchestration Layer
+  - File & Line: app/orchestrator/agent.py:22-38 (build_briefing)
+  - Action: Coordinates the full pipeline:
+      1. Calls mcp_manager.gather_action_items(force_refresh)
+      2. Calls ranking.get_ranker() to select active ranker
+      3. Ranks items via rank_fn(items)
+      4. Detects exam context via _exam_week(ranked, date.today())
+      5. Generates narrative via llm.write_briefing(ranked, exam_week)
+      6. Best-effort logging to store.record_briefing(ranked, ranker_name) if not cached
+      7. Returns populated Briefing domain model.
+
+Hop 3: Multi-Platform Fan-Out & Tool Invocation
+  - File & Line: app/orchestrator/mcp_manager.py:169-211 (gather_action_items)
+  - Action: Checks cache (app/cache.py). On cache miss:
+      Iterates servers in servers.json via _load_registry() (line 33).
+      Calls _collect_from_server(spec) (line 122).
+      Launches each server subprocess via stdio_client(params) (line 131).
+      Calls session.list_tools() (line 134) and session.call_tool() for each tool (line 144).
+      Decodes tool output via _parse_tool_result() (line 63).
+      Normalizes each entry into an ActionItem via _to_action_item() (line 96).
+
+Hop 4: In-Server Deadline Extraction (Inside Gmail & Classroom Servers)
+  - File & Line: mcp_servers/gmail_server/server.py:83,91 and mcp_servers/classroom_server/server.py:109,117
+  - Action: Calls extraction.enrich_due(items, today()).
+  - Extraction implementation: mcp_servers/common/extraction.py:111-136 (extract_due).
+  - Note on Architecture Drift: Extraction occurs inside the individual MCP server processes before returning over stdio, NOT in the central orchestrator manager.
+
+Hop 5: Deduplication and Caching
+  - File & Line: app/orchestrator/mcp_manager.py:152-166 (_dedupe) & lines 201-209
+  - Action: Deduplicates on (source, title.lower(), due). Saves merged items to in-memory/Redis cache with TTL.
+
+Hop 6: Ranking Selection & Sorting
+  - File & Line: app/orchestrator/ranking.py:14-23 (get_ranker)
+  - Action: Reads settings.ranker.
+      If "learned" and model available: returns ("learned", LearnedRanker().rank).
+      Default/fallback: returns ("rule", prioritize).
+  - Execution: app/orchestrator/prioritizer.py:96-123 (prioritize). Computes kind weight, due date boost, email category bonus, and exam week adjustments. Stable sorts descending by score.
+
+Hop 7: Sanitization and Briefing Synthesis
+  - File & Line: app/orchestrator/llm.py:105-123 (write_briefing)
+  - Action: If settings.llm_enabled is True:
+      Formats top 20 items in _items_as_context(items) (lines 73-85).
+      Passes title and detail through app/security.py:74-76 (safe_text).
+      Calls Anthropic Messages API (claude-3-5-sonnet-20241022) with max_tokens=600.
+      If API key is missing or call fails: executes _fallback_briefing (lines 22-46) deterministically.
+
+Hop 8: Persistence & Response
+  - File & Line: app/store.py:70-85 (record_briefing)
+  - Action: Inserts record into SQLite/Postgres briefings table for feedback loops.
+
+3. DOC-VS-CODE DRIFT LIST
+-------------------------
+Drift D01: Prioritizer file location
+  - Docs claim: ARCHITECTURE.md line 29 lists prioritizer under "app/intelligence/ -> ranking.py · learned_ranker.py · prioritizer.py".
+  - Code reality: Prioritizer is located at app/orchestrator/prioritizer.py. (EVALUATION.md line 50 correctly specifies app/orchestrator/prioritizer.py).
+
+Drift D02: Ranking file location
+  - Docs claim: ARCHITECTURE.md line 29 lists ranking.py under "app/intelligence/".
+  - Code reality: Located at app/orchestrator/ranking.py.
+
+Drift D03: LearnedRanker benchmark reporting
+  - Docs claim: EVALUATION.md lines 44-51 and 88-95 only list 4 rankers (random, source_order, due_date, prioritizer).
+  - Code reality: eval/run_eval.py line 39 explicitly defines RANKER_ORDER with 5 rankers: ["random", "source_order", "due_date", "prioritizer", "learned"], and reports full significance tests for learned vs due_date and learned vs prioritizer. EVALUATION.md omitted learned from its headline results.
+
+Drift D04: Deadline extraction execution boundary
+  - Docs claim: ARCHITECTURE.md lines 26 & 54-56 state: "The manager maps to ActionItem models and de-duplicates; Gmail and Classroom additionally run deadline extraction".
+  - Code reality: mcp_manager.py never imports extraction.py. Extraction is executed inside the child subprocesses (mcp_servers/gmail_server/server.py and mcp_servers/classroom_server/server.py).
+
+Drift D05: LLM generation determinism and temperature
+  - Docs claim: ARCHITECTURE.md line 38 and EVALUATION.md suggest a controlled briefing step.
+  - Code reality: app/orchestrator/llm.py line 94 creates Anthropic messages without setting a temperature parameter (defaulting to 1.0), meaning LLM briefings are stochastic when an API key is present.
+
+4. THE PRIORITIZER IN DETAIL
+----------------------------
+File: app/orchestrator/prioritizer.py
+
+A. Base Importance by Kind (_KIND_WEIGHT, lines 17-29):
+  - exam:         6.0
+  - deadline:     5.0
+  - pull_request: 3.0
+  - contest:      3.0
+  - notification: 2.5
+  - issue:        2.0
+  - email:        2.0
+  - practice:     1.5
+  - announcement: 1.5
+  - event:        1.0
+  - error:        0.0
+  - default/other:1.0 (via dict.get(..., 1.0), line 102)
+
+B. Email Category Bonuses (_EMAIL_CATEGORY_WEIGHT, lines 32-36):
+  - internship:  +4.0 (boosts unread internship correspondence)
+  - academic:    +2.0 (boosts coursework-related notifications)
+  - otp:         -3.0 (penalizes one-time passwords as non-actionable noise)
+
+C. Due Date Proximity Boost (_due_boost, lines 49-61):
+  - days is None: 0.0
+  - days <= 0:   +6.0 (due today or overdue)
+  - days == 1:   +4.0 (due tomorrow)
+  - days <= 3:   +2.0 (due within 3 days)
+  - days <= 7:   +1.0 (due within a week)
+  - days > 7:     0.0
+
+D. Exam Week Detection and Adjustments (lines 63-70, 113-118):
+  - Trigger condition: Exam week is active if ANY item has kind == "exam" and 0 <= days_until <= 5.
+  - If exam week is active:
+      * If item is contest (_is_contest, line 77): -4.0 penalty (suppresses competitive practice).
+      * Else if item is graded (_is_graded, line 82): +2.0 boost (elevates academic coursework).
+  - Contest identification keywords (_CONTEST_HINTS, line 74):
+      ("contest", "codeforces", "leetcode", "hackathon", "round") matched case-insensitively in title + detail.
+  - Graded item definition: item.kind in ("exam", "deadline") or item.raw.category == "academic".
+
+E. Score Priority Thresholds (_to_priority, lines 86-93):
+  - score >= 9.0: Priority.urgent
+  - score >= 6.0: Priority.high
+  - score >= 3.0: Priority.medium
+  - score < 3.0:  Priority.low
+
+F. Sorting and Tie-Breaking:
+  - Line 122: items.sort(key=lambda x: x.score, reverse=True)
+  - Python's timsort is stable: items with identical priority scores preserve their arrival order.
+
+5. THE LEARNED RANKER IN DETAIL
+-------------------------------
+Files: app/intelligence/learned_ranker.py, app/intelligence/train.py, app/intelligence/features.py
+
+A. Model Type & Training Formulation:
+  - Model: Ridge regression with closed-form L2 regularization: w = (X^T X + lambda I)^-1 X^T y.
+  - Regularization parameter: lambda = 1.0 (train.py line 25).
+  - Target labels: Gold relevance grades (0.0, 1.0, 2.0, 3.0).
+  - Inference scoring: score = sum(w_i * x_i) + bias (learned_ranker.py line 48).
+
+B. Features (10 features, features.py lines 13-68):
+  - is_exam: 1.0 if kind == 'exam' else 0.0
+  - is_deadline: 1.0 if kind == 'deadline' else 0.0
+  - is_pull_request: 1.0 if kind == 'pull_request' else 0.0
+  - is_contest: 1.0 if contest keyword in title/detail else 0.0
+  - is_internship: 1.0 if category == 'internship' else 0.0
+  - is_otp: 1.0 if category == 'otp' else 0.0
+  - due_urgency: continuous decay: 1.0 / (days_until + 1.0) if days_until >= 0 else 0.0
+  - is_overdue: 1.0 if days_until is not None and days_until < 0 else 0.0
+  - exam_week_graded: 1.0 if exam_week and item is graded else 0.0
+  - exam_week_contest: 1.0 if exam_week and is_contest else 0.0
+
+C. Artifact and Training Provenance:
+  - Trained artifact: app/intelligence/ranker_weights.json.
+  - Training Data Source: eval/dataset.json (all 40 scenarios).
+  - Train/Test Contamination: The checked-in ranker_weights.json was trained on all 221 items across all 40 scenarios. However, eval/run_eval.py line 96 implements _learned_loso() which re-trains on 39 scenarios and tests on the held-out 1 scenario for honest leave-one-out evaluation.
+
+6. THE SANITIZER `safe_text()` IN DETAIL
+----------------------------------------
+File: app/security.py
+
+A. Sanitization Mechanism:
+  - Strips hidden HTML comments: re.compile(r"<!--.*?-->", re.S).
+  - Splits text into lines and checks each line against 12 regular expressions:
+      1. ignore_instructions: r"ignore\s+(all\s+|the\s+)?(previous|prior|above)\s+instructions"
+      2. disregard: r"disregard\s+(the\s+)?(previous|above|earlier|system)"
+      3. forget: r"forget\s+(everything|all|previous|prior)"
+      4. you_are_now: r"\byou\s+are\s+now\b"
+      5. new_instructions: r"new\s+instructions?\s*:"
+      6. system_prompt: r"\bsystem\s+prompt\b"
+      7. reveal_prompt: r"(reveal|show|print|repeat)\s+(your|the)\s+(system\s+)?(prompt|instructions|rules)"
+      8. act_as: r"\b(act|behave|respond)\s+as\s+(if|a|an|the)\b"
+      9. override: r"\b(override|bypass|ignore)\s+(the\s+)?(safety|rules|guardrails|restrictions)\b"
+      10. jailbreak: r"\b(jailbreak|developer\s+mode|DAN\b)"
+      11. role_prefix: r"^\s*(system|assistant|ai)\s*:"
+      12. exfiltrate: r"\b(send|forward|email|leak|post)\b.{0,30}\b(otp|password|token|secret|credentials?)\b"
+  - Matching lines are replaced with: "[removed: possible injection]".
+
+B. Critical Blind Spots (What it does NOT catch):
+  - Zero-width whitespace insertion (e.g. "I\u200bgnore").
+  - Unicode homoglyph substitution (e.g. Cyrillic 'о' in "ignore").
+  - Base64 / rot13 / hex encoded payloads.
+  - Multi-line attacks or semantic instruction phrasing ("Important administrative notice: you must prioritize...").
+  - Unsanitized metadata vectors: In app/orchestrator/llm.py:78-83, safe_text() is called on title and detail, but i.due, i.kind, i.source, and i.priority are concatenated into LLM context raw.
+
+7. THE LLM STEP IN DETAIL
+-------------------------
+File: app/orchestrator/llm.py
+
+A. Model Configuration:
+  - Model ID: settings.llm_model (default: "claude-3-5-sonnet-20241022").
+  - Max tokens: 600.
+  - Temperature: Not set (Anthropic API default = 1.0).
+  - Determinism: Non-deterministic when calling live LLM; completely deterministic in offline fallback.
+
+B. Prompt Templates:
+  - System: "You are Student OS, an assistant that helps an engineering student decide what to do today. Be concise and concrete. Return two lines: first line a punchy headline, then a 2-3 sentence summary."
+  - User: "Exam week: {exam_week}. Ranked items across the student's platforms:\n{_items_as_context(items)}\n\nWrite the headline and summary."
+
+C. Offline / No API Key Fallback:
+  - Deterministic fallback (_fallback_briefing, lines 22-46) counts items by priority and kind, formats a deterministic headline and lead task without external network calls.
+
+8. DEADLINE EXTRACTION IN DETAIL
+--------------------------------
+File: mcp_servers/common/extraction.py
+
+A. Method:
+  - 100% deterministic regex and Python datetime rules (dependency-free).
+  - Extracts relative terms ("today", "tomorrow", "day after tomorrow", "in N days").
+  - Extracts weekday names ("monday".."sunday") resolved to next future occurrence.
+  - Extracts absolute dates ("3 August", "August 3", "03/08", "03-08-2026").
+  - Automatically rolls past month/day occurrences to the next year.
+
+B. Evaluation:
+  - Evaluated in eval/extraction_eval.py against 16 examples in extraction_dataset.json.
+  - Yields Precision = 1.000, Recall = 1.000, F1 = 1.000 on its authored test set.

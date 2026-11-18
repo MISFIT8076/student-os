@@ -1,0 +1,809 @@
+{
+  "generated_at": "2026-09-26T17:28:30Z",
+  "code_path": "C:\\Users\\aggar\\Desktop\\student-os\\backend",
+  "code_commit": "not a git repo",
+  "dataset_sha256": "9e18518415849a9a0977cfaecbbe228a1f3d5621e7178b22da498e5f5e7a001b",
+  "environment": {
+    "python": "3.11.9",
+    "os": "Windows 11 (win32)",
+    "key_packages": {
+      "fastapi": "0.115.6",
+      "pydantic": "2.10.4",
+      "pydantic-settings": "2.7.0",
+      "numpy": "2.2.6",
+      "scipy": "1.16.3",
+      "pytest": "8.3.4",
+      "mcp": "1.2.0",
+      "sqlalchemy": "2.0.36",
+      "cryptography": "48.0.0",
+      "anthropic": "0.42.0"
+    }
+  },
+  "claims": [
+    {
+      "id": "C01",
+      "statement": "Random baseline nDCG@3 mean over 40 scenarios",
+      "reported_value": 0.599,
+      "reproduced_value": 0.599,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [
+        "Averaged over 25 fixed pseudo-random seeds (0-24).",
+        "Uses linear gain (rel_i), not exponential gain (2^rel - 1)."
+      ],
+      "related_findings": ["F06", "F08"]
+    },
+    {
+      "id": "C02",
+      "statement": "Random baseline nDCG@5 mean over 40 scenarios",
+      "reported_value": 0.739,
+      "reproduced_value": 0.739,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [
+        "20 of 40 scenarios (50%) have <= 5 items, inflating the random floor because all items are retrieved in top-5."
+      ],
+      "related_findings": ["F06", "F08"]
+    },
+    {
+      "id": "C03",
+      "statement": "Random baseline P@3 mean over 40 scenarios",
+      "reported_value": 0.464,
+      "reproduced_value": 0.464,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [
+        "Threshold is relevance >= 2.0."
+      ],
+      "related_findings": ["F06"]
+    },
+    {
+      "id": "C04",
+      "statement": "Random baseline pairwise accuracy mean over 40 scenarios",
+      "reported_value": 0.496,
+      "reproduced_value": 0.496,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [
+        "Tied relevance pairs are excluded from denominator."
+      ],
+      "related_findings": []
+    },
+    {
+      "id": "C05",
+      "statement": "Random baseline MRR mean over 40 scenarios",
+      "reported_value": 0.345,
+      "reproduced_value": 0.345,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [
+        "13 of 40 scenarios have no grade-3 items, causing MRR to default to 0.0 for those scenarios."
+      ],
+      "related_findings": ["F07"]
+    },
+    {
+      "id": "C06",
+      "statement": "Source order baseline nDCG@3 mean over 40 scenarios",
+      "reported_value": 0.622,
+      "reproduced_value": 0.622,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [
+        "Arrival order is fixed by zlib.crc32(scenario_id) shuffle seed."
+      ],
+      "related_findings": ["F03", "F08"]
+    },
+    {
+      "id": "C07",
+      "statement": "Source order baseline nDCG@5 mean over 40 scenarios",
+      "reported_value": 0.752,
+      "reproduced_value": 0.752,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [
+        "Inflated by scenarios with <= 5 items."
+      ],
+      "related_findings": ["F03", "F06", "F08"]
+    },
+    {
+      "id": "C08",
+      "statement": "Source order baseline P@3 mean over 40 scenarios",
+      "reported_value": 0.450,
+      "reproduced_value": 0.450,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [
+        "Arrival order dependent."
+      ],
+      "related_findings": ["F03"]
+    },
+    {
+      "id": "C09",
+      "statement": "Source order baseline pairwise accuracy mean over 40 scenarios",
+      "reported_value": 0.536,
+      "reproduced_value": 0.536,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [],
+      "related_findings": []
+    },
+    {
+      "id": "C10",
+      "statement": "Source order baseline MRR mean over 40 scenarios",
+      "reported_value": 0.361,
+      "reproduced_value": 0.361,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [
+        "13 scenarios lack grade-3 items and contribute 0.0."
+      ],
+      "related_findings": ["F07"]
+    },
+    {
+      "id": "C11",
+      "statement": "Due date baseline nDCG@3 mean over 40 scenarios",
+      "reported_value": 0.842,
+      "reproduced_value": 0.842,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [
+        "Undated items fall to bottom (9999-12-31). Ties broken by arrival order."
+      ],
+      "related_findings": ["F03", "F08"]
+    },
+    {
+      "id": "C12",
+      "statement": "Due date baseline nDCG@5 mean over 40 scenarios",
+      "reported_value": 0.887,
+      "reproduced_value": 0.887,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [
+        "Performance varies across arrival seeds (std=0.019, range [0.847, 0.916]). Seed in paper was 0.887."
+      ],
+      "related_findings": ["F03", "F06", "F08"]
+    },
+    {
+      "id": "C13",
+      "statement": "Due date baseline P@3 mean over 40 scenarios",
+      "reported_value": 0.608,
+      "reproduced_value": 0.608,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [],
+      "related_findings": ["F03"]
+    },
+    {
+      "id": "C14",
+      "statement": "Due date baseline pairwise accuracy mean over 40 scenarios",
+      "reported_value": 0.780,
+      "reproduced_value": 0.780,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [],
+      "related_findings": ["F03"]
+    },
+    {
+      "id": "C15",
+      "statement": "Due date baseline MRR mean over 40 scenarios",
+      "reported_value": 0.551,
+      "reproduced_value": 0.551,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [
+        "13 scenarios lack grade-3 items and contribute 0.0."
+      ],
+      "related_findings": ["F07"]
+    },
+    {
+      "id": "C16",
+      "statement": "Prioritizer nDCG@3 mean over 40 scenarios",
+      "reported_value": 0.930,
+      "reproduced_value": 0.930,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [
+        "Rule weights and scenario categories share single-author provenance (author-coupled rules)."
+      ],
+      "related_findings": ["F01", "F04", "F08"]
+    },
+    {
+      "id": "C17",
+      "statement": "Prioritizer nDCG@5 mean over 40 scenarios",
+      "reported_value": 0.954,
+      "reproduced_value": 0.954,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [
+        "Single annotator hand-labeled dataset.",
+        "Author wrote rules and scenarios together."
+      ],
+      "related_findings": ["F01", "F04", "F08"]
+    },
+    {
+      "id": "C18",
+      "statement": "Prioritizer P@3 mean over 40 scenarios",
+      "reported_value": 0.725,
+      "reproduced_value": 0.725,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [],
+      "related_findings": ["F01", "F04"]
+    },
+    {
+      "id": "C19",
+      "statement": "Prioritizer pairwise accuracy mean over 40 scenarios",
+      "reported_value": 0.905,
+      "reproduced_value": 0.905,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [],
+      "related_findings": ["F01", "F04"]
+    },
+    {
+      "id": "C20",
+      "statement": "Prioritizer MRR mean over 40 scenarios",
+      "reported_value": 0.662,
+      "reproduced_value": 0.662,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [
+        "13 scenarios lack grade-3 items and contribute 0.0."
+      ],
+      "related_findings": ["F07"]
+    },
+    {
+      "id": "C21",
+      "statement": "Prioritizer vs due_date nDCG@5 mean delta",
+      "reported_value": 0.067,
+      "reproduced_value": 0.067,
+      "unit_or_format": "signed 3 decimals (+0.067)",
+      "ci_95": [0.035, 0.098],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [
+        "Delta narrows to +0.044 against a 2-line noise-sink due_date baseline.",
+        "Over 30 arrival seeds, mean delta is +0.077 (range [+0.039, +0.105])."
+      ],
+      "related_findings": ["F01", "F03", "F04"]
+    },
+    {
+      "id": "C22",
+      "statement": "Prioritizer vs due_date nDCG@5 95% bootstrap CI lower bound",
+      "reported_value": 0.035,
+      "reproduced_value": 0.035,
+      "unit_or_format": "signed 3 decimals (+0.035)",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED",
+      "caveats": [
+        "Computed via percentile bootstrap over 10,000 paired resamples (seed 0). Scipy BCa yields 0.034."
+      ],
+      "related_findings": []
+    },
+    {
+      "id": "C23",
+      "statement": "Prioritizer vs due_date nDCG@5 95% bootstrap CI upper bound",
+      "reported_value": 0.098,
+      "reproduced_value": 0.098,
+      "unit_or_format": "signed 3 decimals (+0.098)",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED",
+      "caveats": [
+        "Computed via percentile bootstrap over 10,000 paired resamples (seed 0). Scipy BCa yields 0.098."
+      ],
+      "related_findings": []
+    },
+    {
+      "id": "C24",
+      "statement": "Prioritizer vs due_date Wilcoxon p-value",
+      "reported_value": 0.0004,
+      "reproduced_value": 0.0004034,
+      "unit_or_format": "scientific/decimal (0.0004)",
+      "ci_95": [null, null],
+      "n": 30,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [
+        "Uses zero_method='wilcox' (drops 10 zero ties, n=30 nonzero pairs). Pratt method yields p=0.00062; zsplit yields p=0.00067."
+      ],
+      "related_findings": ["F03"]
+    },
+    {
+      "id": "C25",
+      "statement": "Prioritizer vs due_date rank-biserial correlation r",
+      "reported_value": 0.74,
+      "reproduced_value": 0.7419,
+      "unit_or_format": "signed 2 decimals (+0.74)",
+      "ci_95": [null, null],
+      "n": 30,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED",
+      "caveats": [
+        "Matches Kerby (2014) simple difference formula exactly: (405.0 - 60.0)/465.0 = 0.7419."
+      ],
+      "related_findings": []
+    },
+    {
+      "id": "C26",
+      "statement": "Prioritizer vs due_date scenario wins count",
+      "reported_value": 23,
+      "reproduced_value": 23,
+      "unit_or_format": "integer (23)",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED",
+      "caveats": [],
+      "related_findings": []
+    },
+    {
+      "id": "C27",
+      "statement": "Prioritizer vs due_date scenario ties count",
+      "reported_value": 10,
+      "reproduced_value": 10,
+      "unit_or_format": "integer (10)",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED",
+      "caveats": [],
+      "related_findings": []
+    },
+    {
+      "id": "C28",
+      "statement": "Prioritizer vs due_date scenario losses count",
+      "reported_value": 7,
+      "reproduced_value": 7,
+      "unit_or_format": "integer (7)",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED",
+      "caveats": [
+        "Losses occur primarily in quiet/noise scenarios and pure deadline clusters."
+      ],
+      "related_findings": []
+    },
+    {
+      "id": "C29",
+      "statement": "Prioritizer vs source_order nDCG@5 mean delta",
+      "reported_value": 0.202,
+      "reproduced_value": 0.202,
+      "unit_or_format": "signed 3 decimals (+0.202)",
+      "ci_95": [0.140, 0.269],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED",
+      "caveats": [],
+      "related_findings": []
+    },
+    {
+      "id": "C30",
+      "statement": "Prioritizer vs source_order nDCG@5 95% bootstrap CI lower bound",
+      "reported_value": 0.140,
+      "reproduced_value": 0.140,
+      "unit_or_format": "signed 3 decimals (+0.140)",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED",
+      "caveats": [],
+      "related_findings": []
+    },
+    {
+      "id": "C31",
+      "statement": "Prioritizer vs source_order nDCG@5 95% bootstrap CI upper bound",
+      "reported_value": 0.269,
+      "reproduced_value": 0.269,
+      "unit_or_format": "signed 3 decimals (+0.269)",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED",
+      "caveats": [],
+      "related_findings": []
+    },
+    {
+      "id": "C32",
+      "statement": "Prioritizer vs source_order Wilcoxon p-value",
+      "reported_value": 1.7e-06,
+      "reproduced_value": 1.69e-06,
+      "unit_or_format": "scientific (1.7e-06)",
+      "ci_95": [null, null],
+      "n": 36,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED",
+      "caveats": [
+        "Drops 4 ties (n=36 nonzero pairs)."
+      ],
+      "related_findings": []
+    },
+    {
+      "id": "C33",
+      "statement": "Prioritizer vs source_order rank-biserial correlation r",
+      "reported_value": 0.92,
+      "reproduced_value": 0.9219,
+      "unit_or_format": "signed 2 decimals (+0.92)",
+      "ci_95": [null, null],
+      "n": 36,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED",
+      "caveats": [],
+      "related_findings": []
+    },
+    {
+      "id": "C34",
+      "statement": "Prioritizer vs source_order scenario wins count",
+      "reported_value": 34,
+      "reproduced_value": 34,
+      "unit_or_format": "integer (34)",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED",
+      "caveats": [],
+      "related_findings": []
+    },
+    {
+      "id": "C35",
+      "statement": "Prioritizer vs source_order scenario ties count",
+      "reported_value": 4,
+      "reproduced_value": 4,
+      "unit_or_format": "integer (4)",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED",
+      "caveats": [],
+      "related_findings": []
+    },
+    {
+      "id": "C36",
+      "statement": "Prioritizer vs source_order scenario losses count",
+      "reported_value": 2,
+      "reproduced_value": 2,
+      "unit_or_format": "integer (2)",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED",
+      "caveats": [],
+      "related_findings": []
+    }
+  ],
+  "new_results": [
+    {
+      "id": "N01",
+      "statement": "due_date_clean baseline (+noise sink for OTP/notification) nDCG@5 mean",
+      "reported_value": null,
+      "reproduced_value": 0.907,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python verification/audit_baselines_robustness.py",
+      "source_file": "verification/audit_baselines_robustness.py",
+      "status": "VERIFIED",
+      "caveats": [
+        "Sinks OTP and notification items to bottom. Reduces prioritizer advantage from +0.067 to +0.047."
+      ],
+      "related_findings": ["F03"]
+    },
+    {
+      "id": "N02",
+      "statement": "due_date_hybrid baseline (+noise sink + kind tiebreak) nDCG@5 mean",
+      "reported_value": null,
+      "reproduced_value": 0.909,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python verification/audit_baselines_robustness.py",
+      "source_file": "verification/audit_baselines_robustness.py",
+      "status": "VERIFIED",
+      "caveats": [
+        "Reduces prioritizer advantage to +0.044."
+      ],
+      "related_findings": ["F03"]
+    },
+    {
+      "id": "N03",
+      "statement": "Prioritizer ablation: No email category weights nDCG@5 mean",
+      "reported_value": null,
+      "reproduced_value": 0.916,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python verification/audit_baselines_robustness.py",
+      "source_file": "verification/audit_baselines_robustness.py",
+      "status": "VERIFIED",
+      "caveats": [
+        "Causes largest performance drop (-0.038) among all rule groups."
+      ],
+      "related_findings": ["F01"]
+    },
+    {
+      "id": "N04",
+      "statement": "Prioritizer ablation: No due-date boost nDCG@5 mean",
+      "reported_value": null,
+      "reproduced_value": 0.927,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python verification/audit_baselines_robustness.py",
+      "source_file": "verification/audit_baselines_robustness.py",
+      "status": "VERIFIED",
+      "caveats": [
+        "Second largest performance drop (-0.027)."
+      ],
+      "related_findings": []
+    },
+    {
+      "id": "N05",
+      "statement": "Prioritizer ablation: No exam-week context adjustment nDCG@5 mean",
+      "reported_value": null,
+      "reproduced_value": 0.951,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python verification/audit_baselines_robustness.py",
+      "source_file": "verification/audit_baselines_robustness.py",
+      "status": "VERIFIED",
+      "caveats": [
+        "Causes minimal drop (-0.003) because exam week only triggers in 9 of 40 scenarios."
+      ],
+      "related_findings": ["F01"]
+    },
+    {
+      "id": "N06",
+      "statement": "Arrival shuffle seed sweep (30 seeds) delta(prioritizer - due_date) mean",
+      "reported_value": null,
+      "reproduced_value": 0.0773,
+      "unit_or_format": "signed 4 decimals (+0.0773)",
+      "ci_95": [null, null],
+      "n": 30,
+      "command": "python verification/audit_baselines_robustness.py",
+      "source_file": "verification/audit_baselines_robustness.py",
+      "status": "VERIFIED",
+      "caveats": [
+        "Std across seeds is 0.0186; min delta observed is +0.0390, max is +0.1049."
+      ],
+      "related_findings": ["F03"]
+    },
+    {
+      "id": "N07",
+      "statement": "Monte Carlo label noise simulation (20% grade perturbation, 1000 trials) win rate",
+      "reported_value": null,
+      "reproduced_value": 1.0,
+      "unit_or_format": "percentage (100.0%)",
+      "ci_95": [null, null],
+      "n": 1000,
+      "command": "python verification/audit_dataset.py",
+      "source_file": "verification/audit_dataset.py",
+      "status": "VERIFIED",
+      "caveats": [
+        "Prioritizer significantly beats due_date (p < 0.05) in 1000/1000 trials."
+      ],
+      "related_findings": ["F04"]
+    },
+    {
+      "id": "N08",
+      "statement": "Exponential gain (2^rel - 1) nDCG@5 prioritizer vs due_date delta",
+      "reported_value": null,
+      "reproduced_value": 0.084,
+      "unit_or_format": "signed 3 decimals (+0.084)",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python verification/audit_metrics.py",
+      "source_file": "verification/audit_metrics.py",
+      "status": "VERIFIED",
+      "caveats": [
+        "Under standard IR exponential gain, prioritizer is 0.950 and due_date is 0.866."
+      ],
+      "related_findings": ["F08"]
+    },
+    {
+      "id": "N09",
+      "statement": "Adaptive prompt injection bypass rate against safe_text()",
+      "reported_value": null,
+      "reproduced_value": 1.0,
+      "unit_or_format": "percentage (100.0%)",
+      "ci_95": [null, null],
+      "n": 10,
+      "command": "python verification/audit_security.py",
+      "source_file": "verification/audit_security.py",
+      "status": "VERIFIED",
+      "caveats": [
+        "10 of 10 adaptive realistic payloads evade regex sanitizer."
+      ],
+      "related_findings": ["F05"]
+    },
+    {
+      "id": "N10",
+      "statement": "LearnedRanker leave-one-scenario-out (LOSO) nDCG@5 mean",
+      "reported_value": 0.968,
+      "reproduced_value": 0.968,
+      "unit_or_format": "3 decimals",
+      "ci_95": [null, null],
+      "n": 40,
+      "command": "python -m eval.run_eval",
+      "source_file": "eval/results.json",
+      "status": "VERIFIED_WITH_CAVEATS",
+      "caveats": [
+        "LOSO evaluated in run_eval.py, but checked-in ranker_weights.json was trained on all 40 scenarios."
+      ],
+      "related_findings": ["F02"]
+    }
+  ],
+  "findings": [
+    {
+      "id": "F01",
+      "severity": "MAJOR",
+      "title": "Circularity and Author-Coupled Rule Architecture",
+      "evidence": "app/orchestrator/prioritizer.py:32-36 defines categories 'internship', 'academic', 'otp' with fixed weights (+4, +2, -3) that map 1-to-1 to categories in eval/build_dataset.py. Ablation shows dropping categories drops nDCG@5 by 0.038.",
+      "fix": "Disclose author coupling in Threats to Validity. Re-test on held-out scenarios authored by an independent student annotator blind to prioritizer rules."
+    },
+    {
+      "id": "F02",
+      "severity": "MAJOR",
+      "title": "Train/Test Data Contamination in Deployed LearnedRanker",
+      "evidence": "app/intelligence/train.py:79-92 fits ridge regression on all 40 scenarios in dataset.json and commits weights to ranker_weights.json. eval/run_eval.py uses LOSO, but deployed model is trained on evaluation data.",
+      "fix": "Re-train ranker_weights.json on a distinct partition (e.g. 50% split) or document that ranker_weights.json is an in-sample artifact, reporting only LOSO results in papers."
+    },
+    {
+      "id": "F03",
+      "severity": "MAJOR",
+      "title": "Strawman Aspect of due_date Baseline and Tie-Breaking Variance",
+      "evidence": "eval/rankers.py:33 sorts items solely by due date, falling back to arrival order for ties and undated items. Adding a 2-line noise sink narrows the prioritizer gap from +0.067 to +0.047. Across 30 arrival seeds, due_date nDCG@5 fluctuates with std=0.019 (range [0.847, 0.916]).",
+      "fix": "Report stronger baselines (due_date + noise filter and hybrid kind tiebreak) alongside naive due_date in paper results tables."
+    },
+    {
+      "id": "F04",
+      "severity": "MAJOR",
+      "title": "Single-Annotator Subjectivity and Unfilled Agreement Template",
+      "evidence": "eval/build_dataset.py was authored by one person. eval/annotator_agreement.py exits with 'No grades found yet' because study_kit/annotator_sheet.xlsx is unrated. However, 1000-trial Monte Carlo noise simulation shows prioritizer beats due_date in 100% of trials at 20% label noise.",
+      "fix": "Collect ratings from at least one independent annotator using the existing study_kit sheet and report Cohen's kappa."
+    },
+    {
+      "id": "F05",
+      "severity": "MAJOR",
+      "title": "Trivial Security Benchmark and 100% Adaptive Attack Sanitizer Bypass",
+      "evidence": "eval/security_eval.py tests only 10 hand-authored attacks designed to match app/security.py regexes. verification/audit_security.py showed 10 of 10 adaptive injection attacks bypass the filter. app/orchestrator/llm.py:78-83 fails to sanitize metadata fields (due, kind, source). The proposed adversarial ranking benchmark does not exist in code.",
+      "fix": "Do not claim prompt injection robustness based on security_eval.py. Position adversarial ranking and briefing integrity as Future Work or implement the full benchmark."
+    },
+    {
+      "id": "F06",
+      "severity": "MINOR",
+      "title": "Metric Saturation on Short Scenarios",
+      "evidence": "verification/audit_metrics.py showed 20 of 40 scenarios (50.0%) contain 5 or fewer items, artificially elevating nDCG@5 floors (random baseline scores 0.739).",
+      "fix": "Report nDCG@3 as the primary retrieval metric alongside nDCG@5, and highlight scenario item distribution."
+    },
+    {
+      "id": "F07",
+      "severity": "MINOR",
+      "title": "MRR Metric Suppression from Missing Grade-3 Targets",
+      "evidence": "13 of 40 scenarios (32.5%) have no grade-3 items. For these scenarios, MRR defaults to 0.0 for every ranker.",
+      "fix": "Define MRR conditionally on scenarios containing at least one grade-3 item, or report MRR@threshold=2.0."
+    },
+    {
+      "id": "F08",
+      "severity": "MINOR",
+      "title": "Undisclosed Linear DCG Gain Formulation",
+      "evidence": "eval/metrics.py:23 implements dcg as sum(rel_i / log2(i + 1)), whereas standard modern IR uses exponential gain (2^rel - 1). Under exponential gain, prioritizer delta is +0.084 instead of +0.067.",
+      "fix": "Explicitly state the linear gain formula in the methodology section, and report exponential gain in an appendix."
+    },
+    {
+      "id": "F09",
+      "severity": "MINOR",
+      "title": "Documentation vs Code Directory Drift",
+      "evidence": "ARCHITECTURE.md line 29 states prioritizer.py and ranking.py are in app/intelligence/. They are actually in app/orchestrator/. EVALUATION.md omits LearnedRanker.",
+      "fix": "Update ARCHITECTURE.md and EVALUATION.md to match the active codebase layout."
+    },
+    {
+      "id": "F10",
+      "severity": "MINOR",
+      "title": "Windows Console Unicode Crash and Missing Dependencies",
+      "evidence": "eval/run_eval.py line 219 crashes with UnicodeEncodeError on Windows CP1252 consoles due to '\\u0394'. eval/annotator_agreement.py fails due to unlisted openpyxl dependency.",
+      "fix": "Add openpyxl to requirements.txt, and configure UTF-8 output encoding in run_eval.py."
+    }
+  ]
+}

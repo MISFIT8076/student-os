@@ -1,0 +1,4 @@
+Student OS v0.5.0
+Caching layer (Redis + in-memory fallback)
+
+Feature snapshot: files present reflect the project's scope at this version. The newest archive (v0.10.0) is the canonical runnable project.

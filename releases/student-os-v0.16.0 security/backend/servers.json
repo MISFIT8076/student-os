@@ -1,0 +1,54 @@
+{
+  "servers": [
+    {
+      "name": "github",
+      "description": "Open PRs, assigned issues, notifications.",
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_servers.github_server.server"
+      ],
+      "enabled": true
+    },
+    {
+      "name": "gmail",
+      "description": "Unread priority mail.",
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_servers.gmail_server.server"
+      ],
+      "enabled": true
+    },
+    {
+      "name": "calendar",
+      "description": "Events, deadlines, exams.",
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_servers.calendar_server.server"
+      ],
+      "enabled": true
+    },
+    {
+      "name": "codeforces",
+      "description": "Upcoming contests + practice reminder.",
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_servers.codeforces_server.server"
+      ],
+      "enabled": true
+    },
+    {
+      "name": "classroom",
+      "description": "Pending assignments + announcements.",
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_servers.classroom_server.server"
+      ],
+      "enabled": true
+    }
+  ]
+}

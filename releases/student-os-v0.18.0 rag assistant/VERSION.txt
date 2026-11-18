@@ -1,0 +1,4 @@
+Student OS v0.18.0
+Study-material RAG assistant
+
+Feature snapshot: files present reflect the project's scope at this version. The newest archive (v0.10.0) is the canonical runnable project.

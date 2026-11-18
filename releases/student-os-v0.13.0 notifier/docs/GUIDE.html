@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Student OS — The Complete Beginner's Guide</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<style>
+  :root{
+    --ink:#1f2733; --muted:#5b6472; --line:#e4e8ef; --bg:#ffffff;
+    --soft:#f6f8fc; --accent:#2f6bff; --accent-soft:#eaf0ff;
+    --good:#0f9d58; --warn:#e8710a; --urgent:#e5484d;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.65; font-size:17px;
+  }
+  .wrap{max-width:860px; margin:0 auto; padding:32px 22px 80px}
+  header.title{border-bottom:3px solid var(--accent); padding-bottom:18px; margin-bottom:8px}
+  header.title h1{font-size:34px; margin:0 0 6px; letter-spacing:.2px}
+  header.title p{font-size:19px; color:var(--muted); margin:0}
+  h2{font-size:25px; margin:44px 0 12px; padding-top:10px; border-top:1px solid var(--line)}
+  h3{font-size:19px; margin:26px 0 8px}
+  p{margin:12px 0}
+  code{background:var(--soft); border:1px solid var(--line); border-radius:5px; padding:1px 6px; font-size:14.5px}
+  .lead{font-size:18.5px}
+  .callout{border-radius:12px; padding:16px 18px; margin:18px 0; border:1px solid var(--line); background:var(--soft)}
+  .callout.tip{background:#eefaf1; border-color:#bfe6cb}
+  .callout.key{background:var(--accent-soft); border-color:#c7d7ff}
+  .callout.warn{background:#fff5ec; border-color:#ffd6ad}
+  .callout b{display:block; margin-bottom:4px}
+  .analogy{border-left:4px solid var(--accent); padding:4px 0 4px 16px; margin:16px 0; color:#333}
+  .analogy .tag{display:inline-block; font-size:12px; font-weight:700; letter-spacing:.6px;
+    text-transform:uppercase; color:var(--accent); margin-bottom:2px}
+  .diagram{background:var(--soft); border:1px solid var(--line); border-radius:12px; padding:18px; margin:20px 0; text-align:center}
+  .diagram .cap{display:block; margin-top:10px; font-size:14px; color:var(--muted); text-align:center}
+  table{border-collapse:collapse; width:100%; margin:18px 0; font-size:15.5px}
+  th,td{border:1px solid var(--line); padding:9px 11px; text-align:left; vertical-align:top}
+  th{background:var(--soft)}
+  .pill{display:inline-block; font-size:12px; font-weight:700; padding:2px 9px; border-radius:999px; color:#fff}
+  .p-urgent{background:var(--urgent)} .p-high{background:var(--warn)} .p-med{background:var(--accent)} .p-low{background:#8b93a3}
+  .toc{background:var(--soft); border:1px solid var(--line); border-radius:12px; padding:16px 20px}
+  .toc ol{margin:6px 0 0; padding-left:22px}
+  .toc a{color:var(--accent); text-decoration:none}
+  .toc a:hover{text-decoration:underline}
+  .step{display:flex; gap:14px; margin:14px 0}
+  .step .n{flex:0 0 30px; height:30px; border-radius:50%; background:var(--accent); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:700}
+  .muted{color:var(--muted)}
+  .mermaid{margin:0 auto}
+  hr{border:none; border-top:1px solid var(--line); margin:30px 0}
+  .small{font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="title">
+  <h1>Student OS</h1>
+  <p>The complete beginner's guide — what it is, why it exists, and how it works.</p>
+</header>
+
+<p class="lead">This guide assumes <b>zero prior knowledge</b>. If you have never heard of an
+"API", an "MCP server", or an "LLM", that's fine — every term is explained in plain
+words with everyday analogies, pictures, and worked examples.</p>
+
+<div class="callout key">
+  <b>One-sentence summary</b>
+  Student OS is a smart assistant that plugs into all the apps a student uses (github, gmail, calendar, codeforces, classroom), and every morning answers a single question —
+  <i>"What should I do today?"</i> — with one clean, prioritized to-do list.
+  <br/><br/>
+  As of this version it also <b>learns</b> what you find important, digs <b>deadlines out of
+  emails</b>, <b>plans your day</b> around your free time,
+  <b>nudges you</b> before deadlines.
+</div>
+
+<div class="callout warn small">
+  <b>If the diagrams below look blank</b>
+  They are drawn by a small helper loaded from the internet. Open this file while online and
+  they will appear.
+</div>
+
+<div class="toc">
+  <b>What's inside</b>
+  <ol>
+    <li><a href="#problem">The problem: student life is scattered</a></li>
+    <li><a href="#idea">The big idea: one assistant</a></li>
+    <li><a href="#mcp">What is "MCP"? (the key concept)</a></li>
+    <li><a href="#pieces">The building blocks (glossary in pictures)</a></li>
+    <li><a href="#arch">The architecture (how the pieces connect)</a></li>
+    <li><a href="#flow">How one request works, step by step (with example)</a></li>
+    <li><a href="#rank">How the assistant decides what's important</a></li>
+    <li><a href="#cache">Why it feels fast: the cache</a></li>
+    <li><a href="#servers">The 5 connectors, at a glance</a></li>
+    <li><a href="#mock">A clever trick: "mock mode"</a></li>
+    <li><a href="#eval">Proving it actually works (the evaluation)</a></li>
+    <li><a href="#more">What it also does now (v0.11–v0.13.0)</a></li>
+    <li><a href="#stack">The technology used</a></li>
+    <li><a href="#files">Where everything lives (file map)</a></li>
+    <li><a href="#glossary">Glossary</a></li>
+  </ol>
+</div>
+
+<!-- 1 -->
+<h2 id="problem">1. The problem: student life is scattered</h2>
+<p>A typical engineering student juggles six to eight apps <i>every single day</i>. No single app connects
+these. So the student has to open each one, read through it, and figure out what is urgent, what can wait,
+and what they might have missed. Things slip through.</p>
+
+<!-- 2 -->
+<h2 id="idea">2. The big idea: one assistant</h2>
+<p>Student OS flips the picture. Instead of the student connecting to eight apps, <b>one assistant</b>
+connects to the apps, gathers everything, sorts it by importance, and hands the student a single answer:</p>
+<p class="lead" style="text-align:center"><b>"What should I do today?"</b></p>
+
+<!-- 3 -->
+<h2 id="mcp">3. What is "MCP"? (the key concept)</h2>
+<p><b>MCP — the Model Context Protocol</b> — is a real, open standard (introduced late 2024). It defines
+one standard way for an AI assistant to plug into any app or data source.</p>
+
+<div class="analogy">
+  <span class="tag">Analogy: the universal plug</span>
+  Old laptops needed a different charger for every brand. Then USB-C arrived — <b>one shape of plug</b>
+  that works with everything. MCP is USB-C for AI.
+</div>
+
+<!-- 4 -->
+<h2 id="pieces">4. The building blocks (glossary in pictures)</h2>
+<table>
+  <tr><th>Part</th><th>What it does</th><th>Everyday equivalent</th></tr>
+  <tr><td><b>MCP server</b></td><td>Connects to one app and offers simple actions.</td><td>A waiter for one restaurant</td></tr>
+  <tr><td><b>Orchestrator</b></td><td>Talks to all MCP servers, collects everything.</td><td>A head waiter</td></tr>
+  <tr><td><b>Prioritizer</b></td><td>Scores every item and sorts them.</td><td>A smart assistant highlighting your to-do list</td></tr>
+  <tr><td><b>LLM</b></td><td>An AI that writes the friendly summary. Optional.</td><td>A person who reads the list and writes you a note</td></tr>
+  <tr><td><b>Cache</b></td><td>Short-term memory for instant repeats.</td><td>Leftovers in the fridge</td></tr>
+  <tr><td><b>Backend / API</b></td><td>The engine that ties it together.</td><td>The kitchen</td></tr>
+  <tr><td><b>Frontend</b></td><td>The web page you see — dashboard + chat.</td><td>The dining table</td></tr>
+</table>
+
+<!-- 5 -->
+<h2 id="arch">5. The architecture (how the pieces connect)</h2>
+<div class="diagram">
+<pre class="mermaid">
+flowchart TD
+  U["Student asks:<br/>'What should I do today?'"] --> FE["FRONTEND<br/>web dashboard + chat (Next.js)"]
+  FE -->|HTTP| API["BACKEND API (FastAPI)"]
+  API --> ORCH["ORCHESTRATOR<br/>talks to every MCP server"]
+  ORCH --> CACHE{"Recent copy<br/>in the cache?"}
+  subgraph SERVERS["MCP SERVERS (one connector per app)"]
+    direction LR
+    GH["GitHub"]
+    GM["Gmail"]
+    CA["Calendar"]
+    CF["Codeforces"]
+    CL["Classroom"]
+  end
+  CACHE -->|yes| RANK["PRIORITIZER<br/>scores &amp; sorts everything"]
+  CACHE -->|no| SERVERS
+  SERVERS --> RANK["PRIORITIZER<br/>scores &amp; sorts everything"]
+  RANK --> WRITE["SUMMARY WRITER<br/>(LLM or built-in rules)"]
+  WRITE --> API
+  API --> FE
+</pre>
+<span class="cap">The layered architecture.</span>
+</div>
+
+<!-- 6 -->
+<h2 id="flow">6. How one request works, step by step</h2>
+<div class="step"><div class="n">1</div><div>The <b>frontend</b> sends a request: <code>GET /briefing</code>.</div></div>
+<div class="step"><div class="n">2</div><div>The <b>orchestrator</b> starts each MCP server and calls its actions.</div></div>
+<div class="step"><div class="n">3</div><div>Each server returns items in a <b>common format</b>.</div></div>
+<div class="step"><div class="n">4</div><div>The orchestrator merges and removes duplicates.</div></div>
+<div class="step"><div class="n">5</div><div>The <b>prioritizer</b> scores and sorts everything.</div></div>
+<div class="step"><div class="n">6</div><div>A <b>summary</b> is written and the ranked list is returned.</div></div>
+
+<!-- 7 -->
+<h2 id="rank">7. How the assistant decides what's important</h2>
+<p>The prioritizer gives every item a <b>score</b> from three questions:</p>
+<ol>
+  <li><b>What kind of thing is it?</b> An exam starts higher than a calendar event.</li>
+  <li><b>How soon is it due?</b> Due today adds a lot; no date adds nothing.</li>
+  <li><b>What's the current context?</b> During <i>exam week</i>, coursework gets a boost.</li>
+</ol>
+
+<h3>A worked example</h3>
+<table>
+  <tr><th>Item</th><th>Base (kind)</th><th>+ Due soon</th><th>+ Context</th><th>= Score</th><th>Priority</th></tr>
+  <tr><td>OS assignment, due <b>tomorrow</b></td><td>5.0</td><td>+4.0</td><td>+2.0</td><td><b>11.0</b></td><td><span class="pill p-urgent">urgent</span></td></tr>
+  <tr><td>Internship email, 2 days</td><td>2.0</td><td>+2.0</td><td>+4.0</td><td><b>8.0</b></td><td><span class="pill p-high">high</span></td></tr>
+  <tr><td>Codeforces contest, <b>today</b></td><td>3.0</td><td>+6.0</td><td>−4.0</td><td><b>5.0</b></td><td><span class="pill p-med">medium</span></td></tr>
+  <tr><td>"Your OTP is 481920"</td><td>2.0</td><td>+0</td><td>−3.0</td><td><b>−1.0</b></td><td><span class="pill p-low">low</span></td></tr>
+</table>
+
+<!-- 8 -->
+<h2 id="cache">8. Why it feels fast: the cache</h2>
+<p>Gathering from 5 apps takes a few seconds (about 6). If the student refreshes the page twice in a
+minute, re-doing all that work is wasteful. So the assistant keeps the last result in a <b>cache</b>
+(short-term memory) for a short time and serves it instantly on repeat requests.</p>
+
+<div class="analogy">
+  <span class="tag">Analogy: leftovers</span>
+  Cooking a fresh meal takes time. If someone asks for the same dish two minutes later, you serve the
+  leftovers from the fridge instead of cooking again. After a while the leftovers "expire" and you cook
+  fresh. That expiry time is 90 seconds here.
+</div>
+
+<div class="diagram">
+<pre class="mermaid">
+flowchart TD
+  R["Request arrives"] --> Q{"Fresh copy<br/>in the cache?"}
+  Q -->|"Yes"| SERVE["Serve cached plan — instant"]
+  Q -->|"No"| FAN["Ask all 5 servers — about 6 seconds"]
+  FAN --> STORE["Store the result for 90 seconds"]
+  STORE --> SERVE2["Serve the plan"]
+</pre>
+<span class="cap">The cache: if a recent answer exists, return it instantly; otherwise gather fresh and remember it.</span>
+</div>
+
+<p>The "Refresh" button on the dashboard skips the cache on purpose, so you can always force a fresh
+look. The proposal asked for <b>Redis</b> (an industrial-grade memory store) — the code uses Redis when
+available, and otherwise falls back to a simple built-in memory, so it works even with nothing installed.</p>
+
+<!-- 9 -->
+<h2 id="servers">9. The 5 connectors, at a glance</h2>
+<table>
+  <tr><th>Connector</th><th>What it brings in</th><th>Talks to</th><th>Example item</th></tr>
+  <tr><td><b>GitHub</b></td><td>Your open pull requests, assigned issues, notifications</td><td>GitHub API (a token)</td><td>"PR #42 — review requested"</td></tr>
+  <tr><td><b>Gmail</b></td><td>Unread priority mail, auto-tagged (internship / academic / OTP)</td><td>Gmail API (Google login)</td><td>"Internship closes soon"</td></tr>
+  <tr><td><b>Calendar</b></td><td>Upcoming events, exams, assignment deadlines</td><td>Google Calendar API</td><td>"DBMS exam in 5 days"</td></tr>
+  <tr><td><b>Codeforces</b></td><td>Upcoming rated contests + a practice reminder</td><td>Codeforces public API</td><td>"Div 2 round tomorrow"</td></tr>
+  <tr><td><b>Classroom</b></td><td>Pending assignments and announcements</td><td>Google Classroom API</td><td>"Lab 3 due in 2 days"</td></tr>
+</table>
+
+<!-- 10 -->
+<h2 id="mock">10. A clever trick: "mock mode"</h2>
+<p>The whole system ships in <b>mock mode</b>: every connector returns realistic <i>sample</i> data.
+This means anyone can run the project end-to-end in seconds, with <b>zero setup</b>.</p>
+
+<!-- 10 -->
+<h2 id="eval">10. Proving it actually works (the evaluation)</h2>
+<p>Anyone can <i>claim</i> their assistant ranks well. We <b>measured</b> it. We wrote down <b>40 realistic
+student situations</b> and, for each item, a human "how important is this today?" grade from 0 to 3. Then we
+compared our prioritizer against simpler methods and scored how close each came to the human grades.</p>
+
+<div class="analogy">
+  <span class="tag">In plain terms</span>
+  It's like grading assistants on the same test, 40 times. The "answer key" is what a sensible human
+  would put on top. The main score, <b>nDCG</b>, simply measures <i>"did you put the important things near
+  the top?"</i> — 1.0 is perfect, 0 is terrible.
+</div>
+
+
+<table>
+  <tr><th>Assistant (ranker)</th><th>Average score, nDCG@5 (0–1)</th><th>Verdict</th></tr>
+  <tr><td>Random order</td><td>0.74</td><td>the floor</td></tr>
+  <tr><td>Arrival order (no sorting)</td><td>0.75</td><td>barely better</td></tr>
+  <tr><td>Sort by due date only</td><td>0.89</td><td>decent, naive</td></tr>
+  <tr><td><b>Our prioritizer</b></td><td><b>0.95</b></td><td><b>best rule-based</b></td></tr>
+  <tr><td><b>Learned ranker</b></td><td><b>0.97</b></td><td><b>best overall</b></td></tr>
+</table>
+
+<p>Head-to-head against the best simple method (sort-by-due-date), learned ranker <b>won</b> the majority of the
+40 situations. The ties and losses are mostly cases where sorting by due date is already the right answer —
+we included those on purpose, so the test is fair.</p>
+
+<div class="analogy">
+  <span class="tag">"But could that just be luck?"</span>
+  Good question — and exactly what a <b>significance test</b> answers. The test gives a number called a
+  <b>p-value</b>: the chance the result is just luck. Ours is <b>p ≈ 2e-05</b> — well below the
+  threshold of 0.05. So the improvement is genuine, not a coincidence.
+</div>
+
+<div class="callout key small">
+  <b>Being honest about limits</b>
+  The 40 grades came from <b>one author</b>, and the scenarios are realistic but constructed. We even report
+  the situations we lost. Saying this openly is what makes research credible.
+</div>
+
+<!-- 12 -->
+<h2 id="more">12. What it also does now</h2>
+<p>The project kept growing one feature per version. Here's each newer capability in
+plain terms — every one is justified by a real student need.</p>
+
+<div class="callout tip">
+  <b>🧠 It learns what matters to you (the learned ranker)</b>
+  A small <b>machine-learning model</b> learns priorities from real examples (and, over time,
+  from what you open, finish, or dismiss). On unseen test cases it ranks even better
+  than the hand-written rules.
+</div>
+
+<div class="callout tip">
+  <b>📅 It finds deadlines hidden in text (NLP extraction)</b>
+  An email like <i>"apply by Friday"</i> or <i>"submit before 3 August"</i> used to slip through.
+  Now the assistant <b>reads the words</b> and pulls the deadline out automatically.
+</div>
+
+<div class="callout tip">
+  <b>🗓️ It plans your actual day (the scheduler)</b>
+  Beyond a ranked <i>list</i>, it builds a <b>timetable</b>: it fits your tasks into the
+  free gaps around your classes. If there's more to do than hours, it schedules the most important
+  and gently <b>defers the rest</b>.
+</div>
+
+<div class="callout tip">
+  <b>🔔 It nudges you (proactive reminders)</b>
+  A scheduled job can <b>push your morning brief</b> and pre-deadline alerts to
+  <b>Telegram or email</b>. (With nothing set up it just prints the message — a safe "dry run".)
+</div>
+
+<!-- 13 -->
+<h2 id="stack">13. The technology used</h2>
+<table>
+  <tr><th>Layer</th><th>Technology</th><th>In one line</th></tr>
+  <tr><td>Frontend</td><td>Next.js + TypeScript</td><td>the web dashboard and chat you see</td></tr>
+  <tr><td>Backend</td><td>Python + FastAPI</td><td>the engine that answers requests</td></tr>
+  <tr><td>Connectors</td><td>Model Context Protocol (MCP)</td><td>the universal "plug" to each app</td></tr>
+  <tr><td>AI writer (optional)</td><td>Claude (Anthropic)</td><td>writes the friendly summary</td></tr>
+  <tr><td>Logins</td><td>OAuth 2.0</td><td>secure, read-only access to Google/GitHub</td></tr>
+  <tr><td>Cache</td><td>Redis (or built-in memory)</td><td>makes repeat requests instant</td></tr>
+</table>
+
+<!-- 14 -->
+<h2 id="files">14. Where everything lives (file map)</h2>
+<pre style="background:var(--soft); border:1px solid var(--line); border-radius:10px; padding:16px; overflow:auto; font-size:14px; line-height:1.5">
+student-os/
+├─ backend/                    the engine (Python)
+│  ├─ app/
+│  │  ├─ main.py               starts the API
+│  │  ├─ orchestrator/         gathers, ranks, summarizes
+│  │  │  ├─ mcp_manager.py       talks to all MCP servers (+ caching)
+│  │  │  ├─ prioritizer.py       the scoring brain
+│  │  │  ├─ llm.py               summary writer (AI or rules)
+│  │  │  └─ agent.py             ties gather → rank → write together
+│  │  ├─ cache.py  store.py    short-term memory + saved history/feedback
+│  │  ├─ notifier.py
+│  │  ├─ intelligence/         learned ranker · scheduler
+│  │  └─ schemas.py            the common shape every item uses
+│  ├─ mcp_servers/             one folder per connector
+│  │  ├─ github_server/  gmail_server/  calendar_server/
+│  │  ├─ codeforces_server/  classroom_server/
+│  │  └─ common/               Google login · deadline extraction · helpers
+│  ├─ eval/                    the evaluation
+│  ├─ tests/                   automated checks (37 passing)
+│  └─ demo.py                  run the whole thing from the terminal
+├─ frontend/                   web app: dashboard, chat
+└─ docs/                       this guide + other documentation
+</pre>
+
+<!-- 15 -->
+<h2 id="glossary">15. Glossary</h2>
+<table>
+  <tr><th>Term</th><th>Plain meaning</th></tr>
+  <tr><td><b>API</b></td><td>A defined "door" one program uses to ask another program for data.</td></tr>
+  <tr><td><b>MCP</b> (Model Context Protocol)</td><td>A shared standard — a universal "plug" — that lets an AI connect to any tool the same way.</td></tr>
+  <tr><td><b>MCP server</b></td><td>A small program that connects one app to the assistant using MCP (the "waiter").</td></tr>
+  <tr><td><b>Orchestrator</b></td><td>The coordinator that talks to all the MCP servers and merges what they return.</td></tr>
+  <tr><td><b>Prioritizer</b></td><td>The logic that scores and sorts items so the most important is on top.</td></tr>
+  <tr><td><b>LLM</b></td><td>A Large Language Model — an AI like Claude that understands and writes text.</td></tr>
+  <tr><td><b>OAuth</b></td><td>The secure "Sign in with Google" style login that grants limited, revocable access.</td></tr>
+  <tr><td><b>Cache</b></td><td>Short-term memory that stores a recent result to answer repeat requests instantly.</td></tr>
+  <tr><td><b>Token</b></td><td>A secret key that proves the app is allowed to read your data (like a temporary pass).</td></tr>
+  <tr><td><b>nDCG</b></td><td>A ranking score (0–1) that rewards putting the most important items near the top.</td></tr>
+  <tr><td><b>p-value / significant</b></td><td>The chance a result is just luck. A small p-value (below 0.05) means the effect is real.</td></tr>
+  <tr><td><b>Mock mode</b></td><td>Running on realistic fake data so the system works with no accounts or setup.</td></tr>
+</table>
+
+<hr/>
+<p class="muted small">Student OS — BTech Final Year Project. This guide explains the system as built (v0.13.0):
+5 connectors, an orchestrator, a learned prioritizer, deadline extraction, a day-scheduler, a cache, persistence + feedback, proactive reminders, a web app, a measured evaluation. For setup see <code>docs/SETUP.md</code>.</p>
+
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#eaf0ff',
+      primaryBorderColor: '#2f6bff',
+      primaryTextColor: '#1f2733',
+      lineColor: '#7b88a8',
+      fontSize: '15px'
+    },
+    flowchart: { curve: 'basis', htmlLabels: true },
+    securityLevel: 'loose'
+  });
+</script>
+</body>
+</html>

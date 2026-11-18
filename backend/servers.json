@@ -1,0 +1,40 @@
+{
+  "_comment": "Registry of MCP servers the orchestrator connects to. Each entry is launched as a subprocess over stdio (the standard MCP local transport). Add a new platform by adding an entry here and dropping a server module in mcp_servers/.",
+  "servers": [
+    {
+      "name": "github",
+      "description": "Open PRs, assigned issues, and recent commit activity.",
+      "command": "python",
+      "args": ["-m", "mcp_servers.github_server.server"],
+      "enabled": true
+    },
+    {
+      "name": "gmail",
+      "description": "Unread priority mail: internships, college notices, deadlines.",
+      "command": "python",
+      "args": ["-m", "mcp_servers.gmail_server.server"],
+      "enabled": true
+    },
+    {
+      "name": "calendar",
+      "description": "Upcoming events, class schedule, exam and assignment deadlines.",
+      "command": "python",
+      "args": ["-m", "mcp_servers.calendar_server.server"],
+      "enabled": true
+    },
+    {
+      "name": "codeforces",
+      "description": "Upcoming rated contests and a practice reminder.",
+      "command": "python",
+      "args": ["-m", "mcp_servers.codeforces_server.server"],
+      "enabled": true
+    },
+    {
+      "name": "classroom",
+      "description": "Pending assignments and announcements from Google Classroom.",
+      "command": "python",
+      "args": ["-m", "mcp_servers.classroom_server.server"],
+      "enabled": true
+    }
+  ]
+}

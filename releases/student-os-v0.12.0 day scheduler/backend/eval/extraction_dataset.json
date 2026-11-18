@@ -1,0 +1,22 @@
+{
+  "_about": "Labeled texts for evaluating deadline extraction. expect_offset_days is the true deadline relative to the fixed reference date 2026-08-03 (or null when the text states no deadline). Offsets here avoid weekday ambiguity; weekday parsing is covered in tests/test_extraction.py.",
+  "reference_date": "2026-08-03",
+  "examples": [
+    {"text": "Please submit the assignment by today", "expect_offset_days": 0},
+    {"text": "Reminder: the form closes tomorrow", "expect_offset_days": 1},
+    {"text": "Hackathon registration deadline is day after tomorrow", "expect_offset_days": 2},
+    {"text": "Apply within the next window — closes in 3 days", "expect_offset_days": 3},
+    {"text": "Internship applications close in 5 days", "expect_offset_days": 5},
+    {"text": "Scholarship: last date to apply is 6 August", "expect_offset_days": 3},
+    {"text": "Submit the report before August 6", "expect_offset_days": 3},
+    {"text": "The paper deadline is 10 August", "expect_offset_days": 7},
+    {"text": "Placement drive registration on 12 aug", "expect_offset_days": 9},
+    {"text": "Fee payment due by 05/08", "expect_offset_days": 2},
+    {"text": "Mid-sem exam on 3/8/2026", "expect_offset_days": 0},
+    {"text": "Flat 50% off all courses this week!", "expect_offset_days": null},
+    {"text": "Your OTP is 4821, valid for 10 minutes", "expect_offset_days": null},
+    {"text": "Weekly community newsletter digest", "expect_offset_days": null},
+    {"text": "Thanks — your submission was received", "expect_offset_days": null},
+    {"text": "See you at the alumni meetup soon", "expect_offset_days": null}
+  ]
+}

@@ -1,0 +1,4 @@
+Student OS v0.16.0
+Security hardening (prompt-injection defence, token vault, scope audit)
+
+Feature snapshot: files present reflect the project's scope at this version. The newest archive (v0.10.0) is the canonical runnable project.

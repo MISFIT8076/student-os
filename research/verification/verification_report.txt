@@ -1,0 +1,398 @@
+================================================================================
+ STUDENT OS - BENCHMARK VERIFICATION AUDIT & CODE DISCOVERY REPORT
+================================================================================
+Generated at: 2026-09-26T17:28:30Z
+Auditor: Skeptical Research Engineer & Workshop Reviewer
+Status: COMPLETE
+
+================================================================================
+1. EXECUTIVE SUMMARY
+================================================================================
+Can this go in a research paper as-is? NO.
+Can it go in with changes? YES - suitable for an applied or student IR/AI workshop.
+Every reported metric in EVALUATION.md reproduces bit-for-bit (prioritizer beats
+due_date by +0.067 nDCG@5, p=0.0004, r=0.74, 23/10/7 W/T/L), and statistical
+significance survives all Holm-Bonferroni corrections and 1,000 Monte Carlo label
+noise trials. However, the evaluation has five major flaws: (1) circularity from
+author-coupled rules where prioritizer categories map 1-to-1 to dataset tags; (2)
+a strawman due_date baseline whose gap shrinks to +0.044 against a 2-line noise
+filter; (3) a single annotator with an unfilled inter-rater agreement template; (4)
+deployed LearnedRanker weights trained on all 40 test scenarios; and (5) the
+novel adversarial injection benchmark does not exist in code, while the current
+regex filter is bypassed by 100% of adaptive attacks. With honest caveats and
+stronger baselines, a short workshop paper is viable.
+
+================================================================================
+2. CODE LOCATION AND REPOSITORY PROVENANCE
+================================================================================
+[OBSERVED]
+The active codebase was located at:
+  C:\Users\aggar\Desktop\student-os\backend
+
+Other copies found on system:
+  18 historic milestone releases in C:\Users\aggar\Desktop\student-os\releases\
+  (student-os-v0.1.0 Initial Platform through student-os-v0.18.0 rag assistant).
+  Root desktop folder is not a git repository (fatal: not a git repository: .git).
+  Active version in CHANGELOG.md is v0.18.0 (dated 2026), matching ARCHITECTURE.md.
+
+Why this copy was picked:
+  C:\Users\aggar\Desktop\student-os\backend is the latest, active, fully populated
+  working directory that contains all components (app/, eval/, mcp_servers/, tests/,
+  servers.json, and study_kit/).
+
+================================================================================
+3. CODE MAP SUMMARY AND DOC-VS-CODE DRIFT
+================================================================================
+[OBSERVED]
+Request flow hop trace for GET /briefing:
+1. app/routers/briefing.py:14-19 calls agent.build_briefing(force_refresh).
+2. app/orchestrator/agent.py:22-38 calls mcp_manager.gather_action_items().
+3. app/orchestrator/mcp_manager.py:169-211 reads servers.json, checks cache (app/cache.py),
+   launches subprocesses over stdio, lists and calls tools via ClientSession.
+4. mcp_servers/gmail_server/server.py:83,91 and classroom_server/server.py:109,117
+   call mcp_servers/common/extraction.py:enrich_due() before sending items over stdio.
+5. app/orchestrator/mcp_manager.py:152-166 de-duplicates items by (source, title, due).
+6. app/orchestrator/agent.py:24 calls ranking.get_ranker() (app/orchestrator/ranking.py:14).
+7. app/orchestrator/prioritizer.py:96-123 scores items (kind weight + due boost +
+   category bonus + exam week adjustment) and stable sorts descending.
+8. app/orchestrator/agent.py:27 calls llm.write_briefing(ranked, exam_week).
+9. app/orchestrator/llm.py:73-85 formats top 20 items, sanitizing title and detail
+   via app/security.py:74-76 (safe_text). Metadata (due, source, kind) is unsanitized.
+10. If ANTHROPIC_API_KEY is unset or request fails, falls back to deterministic writer
+    _fallback_briefing (llm.py:22-46).
+11. app/store.py:70-85 logs shown items to SQLite/Postgres briefings table.
+
+Doc-vs-Code Drift:
+- Drift D01: Prioritizer location. ARCHITECTURE.md:29 claims prioritizer.py is in
+  app/intelligence/. In code, it is in app/orchestrator/prioritizer.py.
+- Drift D02: Ranking selector location. ARCHITECTURE.md:29 claims ranking.py is in
+  app/intelligence/. In code, it is in app/orchestrator/ranking.py.
+- Drift D03: LearnedRanker omitted in docs. eval/run_eval.py:39 evaluates 5 rankers
+  including "learned" (nDCG@5 = 0.968). EVALUATION.md:88-95 omits learned completely.
+- Drift D04: Deadline extraction boundary. ARCHITECTURE.md:54-56 implies orchestrator
+  manager runs extraction. Code shows extraction runs inside child MCP server processes.
+- Drift D05: LLM temperature. ARCHITECTURE.md:38 implies controlled generation; code
+  (llm.py:94) leaves temperature unspecified, defaulting to 1.0 (stochastic).
+
+================================================================================
+4. BENCHMARK INVENTORY
+================================================================================
+[OBSERVED]
+Total benchmarks in repository: 4 discovered + 1 proposed in design docs.
+
+1. Offline Ranker IR Benchmark (backend/eval/):
+   - Question: Does prioritizer rank items closer to human judgment than heuristics?
+   - Target: Rankers (random, source_order, due_date, prioritizer, learned).
+   - Size: 40 scenarios, 221 items (min=4, median=6, max=8). 20 scenarios have <= 5 items.
+   - Provenance: Single author hand-labeled integer literals in eval/build_dataset.py.
+   - Run: python -m eval.run_eval. Results in eval/results.json and eval/results.csv.
+   - Status: Complete. Fully reproducible.
+
+2. Deadline Extraction Benchmark (backend/eval/extraction_eval.py):
+   - Question: Accuracy of deterministic regex date extraction from prose.
+   - Target: mcp_servers/common/extraction.py.
+   - Size: 16 examples in extraction_dataset.json (11 positive deadlines, 5 noise).
+   - Results: TP=11, FP=0, FN=0, TN=5 (P=1.000, R=1.000, F1=1.000).
+   - Status: Complete unit benchmark, but tiny and not cited in EVALUATION.md.
+
+3. Prompt-Injection Red-Team Benchmark (backend/eval/security_eval.py):
+   - Question: Detection and false-positive rate of regex sanitizer.
+   - Target: app/security.py.
+   - Size: 10 attacks, 8 benign strings.
+   - Results: 10/10 attacks caught (100%), 0/8 benign flagged (0% FPR).
+   - Status: Trivial / circular. The 10 attacks exactly match the 13 regexes.
+
+4. Inter-Annotator Agreement Harness (backend/eval/annotator_agreement.py):
+   - Question: Inter-rater reliability (Cohen's kappa) on the 221 benchmark items.
+   - Target: Label reliability across raters.
+   - Size: 221 items in study_kit/annotator_sheet.xlsx.
+   - Results: None. Sheet is unrated ("No grades found yet").
+   - Status: Stub / unfilled template.
+
+5. Adversarial Ranking & Briefing Integrity Benchmark:
+   - Question: Rank-Hijack Success Rate and Briefing-Injection Success Rate across
+     ranker variants x sanitizer on/off.
+   - Status: DOES NOT EXIST in the codebase in any form. Only proposed in docs.
+
+================================================================================
+5. REPRODUCTION TABLE (REPORTED VS REPRODUCED)
+================================================================================
+[OBSERVED]
+Command: cmd /c "set PYTHONIOENCODING=utf-8 && python -m eval.run_eval"
+Dataset SHA256: 9e18518415849a9a0977cfaecbbe228a1f3d5621e7178b22da498e5f5e7a001b
+
+Metric Table (Mean over 40 scenarios):
+-----------------------------------------------------------------------------------------
+Ranker       Metric      Reported    Reproduced    Abs Diff    Status
+-----------------------------------------------------------------------------------------
+random       nDCG@3       0.599       0.599         0.000      VERIFIED_WITH_CAVEATS
+random       nDCG@5       0.739       0.739         0.000      VERIFIED_WITH_CAVEATS
+random       P@3          0.464       0.464         0.000      VERIFIED_WITH_CAVEATS
+random       pairwise     0.496       0.496         0.000      VERIFIED_WITH_CAVEATS
+random       MRR          0.345       0.345         0.000      VERIFIED_WITH_CAVEATS
+source_order nDCG@3       0.622       0.622         0.000      VERIFIED_WITH_CAVEATS
+source_order nDCG@5       0.752       0.752         0.000      VERIFIED_WITH_CAVEATS
+source_order P@3          0.450       0.450         0.000      VERIFIED_WITH_CAVEATS
+source_order pairwise     0.536       0.536         0.000      VERIFIED_WITH_CAVEATS
+source_order MRR          0.361       0.361         0.000      VERIFIED_WITH_CAVEATS
+due_date     nDCG@3       0.842       0.842         0.000      VERIFIED_WITH_CAVEATS
+due_date     nDCG@5       0.887       0.887         0.000      VERIFIED_WITH_CAVEATS
+due_date     P@3          0.608       0.608         0.000      VERIFIED_WITH_CAVEATS
+due_date     pairwise     0.780       0.780         0.000      VERIFIED_WITH_CAVEATS
+due_date     MRR          0.551       0.551         0.000      VERIFIED_WITH_CAVEATS
+prioritizer  nDCG@3       0.930       0.930         0.000      VERIFIED_WITH_CAVEATS
+prioritizer  nDCG@5       0.954       0.954         0.000      VERIFIED_WITH_CAVEATS
+prioritizer  P@3          0.725       0.725         0.000      VERIFIED_WITH_CAVEATS
+prioritizer  pairwise     0.905       0.905         0.000      VERIFIED_WITH_CAVEATS
+prioritizer  MRR          0.662       0.662         0.000      VERIFIED_WITH_CAVEATS
+learned*     nDCG@3       (omitted)   0.961         -          VERIFIED_WITH_CAVEATS
+learned*     nDCG@5       (omitted)   0.968         -          VERIFIED_WITH_CAVEATS
+learned*     P@3          (omitted)   0.767         -          VERIFIED_WITH_CAVEATS
+learned*     pairwise     (omitted)   0.977         -          VERIFIED_WITH_CAVEATS
+learned*     MRR          (omitted)   0.637         -          VERIFIED_WITH_CAVEATS
+-----------------------------------------------------------------------------------------
+*LearnedRanker is computed via honest leave-one-scenario-out (LOSO) cross-validation in
+run_eval.py, but was omitted from EVALUATION.md tables.
+
+Significance Tests (nDCG@5, N=40 scenarios):
+-----------------------------------------------------------------------------------------
+Comparison                Statistic       Reported   Reproduced   Diff    Status
+-----------------------------------------------------------------------------------------
+prio vs due_date          mean delta      +0.067     +0.0665      0.000   VERIFIED_WITH_CAVEATS
+prio vs due_date          95% CI low      +0.035     +0.0354      0.000   VERIFIED
+prio vs due_date          95% CI high     +0.098     +0.0982      0.000   VERIFIED
+prio vs due_date          Wilcoxon p      0.0004     0.0004034    0.0000  VERIFIED_WITH_CAVEATS
+prio vs due_date          effect r        +0.74      +0.7419      0.00    VERIFIED
+prio vs due_date          wins            23         23           0       VERIFIED
+prio vs due_date          ties            10         10           0       VERIFIED
+prio vs due_date          losses          7          7            0       VERIFIED
+prio vs source_order      mean delta      +0.202     +0.2016      0.000   VERIFIED
+prio vs source_order      95% CI low      +0.140     +0.1396      0.000   VERIFIED
+prio vs source_order      95% CI high     +0.269     +0.2687      0.000   VERIFIED
+prio vs source_order      Wilcoxon p      1.7e-06    1.69e-06     0.0     VERIFIED
+prio vs source_order      effect r        +0.92      +0.9219      0.00    VERIFIED
+prio vs source_order      wins            34         34           0       VERIFIED
+prio vs source_order      ties            4          4            0       VERIFIED
+prio vs source_order      losses          2          2            0       VERIFIED
+-----------------------------------------------------------------------------------------
+
+================================================================================
+6. DETAILED FINDINGS
+================================================================================
+
+Finding F01: Circularity and Author-Coupled Rule Architecture
+- Severity: MAJOR
+- Status: OBSERVED
+- Evidence: app/orchestrator/prioritizer.py:32-36 defines category weights: internship (+4),
+  academic (+2), otp (-3). In eval/build_dataset.py, every email is manually tagged
+  category="internship", "academic", or "otp". In verification/audit_baselines_robustness.py,
+  ablating email categories causes the largest performance drop (-0.038 nDCG@5).
+- Impact on Paper: Reviewers will identify circularity. The author designed both the rule
+  weights and the scenario categories.
+- Fix: Disclose the author-coupling transparently in Threats to Validity. Present an
+  ablation showing the performance drop without category tags.
+
+Finding F02: Train/Test Contamination in Deployed LearnedRanker
+- Severity: MAJOR
+- Status: OBSERVED
+- Evidence: app/intelligence/train.py:79-92 fits ridge regression on all 40 scenarios
+  in dataset.json and commits the weights to app/intelligence/ranker_weights.json.
+  While eval/run_eval.py implements LOSO for reporting, the production runtime model
+  is trained 100% on the test set.
+- Impact on Paper: The production artifact cannot be claimed as an out-of-sample model.
+- Fix: Clarify that eval/run_eval.py reports LOSO cross-validated performance, not the
+  in-sample performance of the checked-in ranker_weights.json.
+
+Finding F03: Strawman Aspect of due_date Baseline and Tie-Break Instability
+- Severity: MAJOR
+- Status: OBSERVED
+- Evidence: eval/rankers.py:33 sorts items solely by due date, falling back to arrival order
+  for ties. Undated noise items (OTPs) sit mixed into arrival order. In
+  verification/audit_baselines_robustness.py, adding a 2-line noise sink (due_date_clean)
+  increases due_date nDCG@5 from 0.887 to 0.907, cutting the prioritizer advantage by 30%
+  (from +0.067 to +0.047). Across 30 arrival seeds, due_date nDCG@5 has std=0.019 (range
+  [0.847, 0.916]), while prioritizer has std=0.001 (range [0.952, 0.955]).
+- Impact on Paper: Reviewers will note that pure due_date is weakened by not filtering OTPs.
+- Fix: Report stronger baselines (due_date + noise sink and hybrid kind tiebreak) in the
+  results table alongside naive due_date.
+
+Finding F04: Single-Annotator Subjectivity and Unfilled Agreement Template
+- Severity: MAJOR
+- Status: OBSERVED
+- Evidence: All 40 scenarios and gold grades in eval/build_dataset.py were authored by one
+  person. eval/annotator_agreement.py exits with "No grades found yet" because
+  study_kit/annotator_sheet.xlsx is unrated.
+- Impact on Paper: Major threat to external validity.
+- Fix: Run a 1,000-trial Monte Carlo label noise simulation (which showed 100% of trials
+  remain significant at 20% label noise) to prove robustness against single-annotator noise.
+  Fill the sheet with an independent student annotator before camera-ready submission.
+
+Finding F05: Trivial Security Benchmark and 100% Adaptive Attack Sanitizer Bypass
+- Severity: MAJOR
+- Status: OBSERVED
+- Evidence: eval/security_eval.py only tests 10 hand-authored attacks matching regexes.
+  verification/audit_security.py demonstrated that 10 of 10 adaptive prompt injection
+  attacks (homoglyphs, zero-width spaces, base64, administrative phrasing) bypass the filter.
+  app/orchestrator/llm.py:78-83 fails to sanitize metadata fields (due, source, kind).
+  The adversarial ranking benchmark does not exist in code.
+- Impact on Paper: The paper cannot claim prompt injection robustness or novel security
+  integrity results based on the existing repository.
+- Fix: Frame the paper around the ranking benchmark and systems architecture; place prompt
+  injection and adversarial ranking integrity squarely in Future Work.
+
+Finding F06: Metric Saturation on Short Scenarios
+- Severity: MINOR
+- Status: OBSERVED
+- Evidence: verification/audit_metrics.py revealed that 20 of 40 scenarios (50.0%) have 5
+  or fewer items. For a 4-item scenario, top-5 retrieval is a full permutation test.
+  This elevates the random baseline nDCG@5 to 0.739.
+- Impact on Paper: Reviewers may argue nDCG@5 is too forgiving on small lists.
+- Fix: Highlight nDCG@3 (where random scores 0.599 and prioritizer scores 0.930) as the
+  primary top-of-list metric.
+
+Finding F07: MRR Metric Suppression from Missing Grade-3 Targets
+- Severity: MINOR
+- Status: OBSERVED
+- Evidence: 13 of 40 scenarios (32.5%) have no grade-3 items. In eval/metrics.py:67-72,
+  mrr() returns 0.0 for all rankers when no grade-3 item exists, depressing MRR.
+- Impact on Paper: MRR numbers (prioritizer: 0.662, due_date: 0.551) are artificially
+  suppressed by zero-inflation on 13 scenarios.
+- Fix: Clarify the MRR threshold in the methodology section, or report MRR only over the
+  27 scenarios containing grade-3 items.
+
+Finding F08: Undisclosed Linear DCG Gain Formulation
+- Severity: MINOR
+- Status: OBSERVED
+- Evidence: eval/metrics.py:23 computes DCG with linear gain rel_i / log2(i + 1). Modern
+  web search IR literature typically uses exponential gain (2^rel - 1) / log2(i + 1).
+  Under exponential gain, prioritizer nDCG@5 is 0.950, due_date is 0.866, and delta is
+  +0.084 (even larger than the reported +0.067).
+- Impact on Paper: Failure to state the gain formulation makes the metric ambiguous.
+- Fix: State the linear gain formula explicitly in Task Formulation, and report the
+  exponential gain comparison (+0.084) in the analysis.
+
+Finding F09: Documentation vs Code Directory Drift
+- Severity: MINOR
+- Status: OBSERVED
+- Evidence: ARCHITECTURE.md line 29 states prioritizer.py and ranking.py are in
+  app/intelligence/. They are in app/orchestrator/. EVALUATION.md omits LearnedRanker.
+- Impact on Paper: Inaccurate citations to repository source files.
+- Fix: Correct file paths and acknowledge LearnedRanker.
+
+Finding F10: Windows Console Unicode Crash and Missing Dependencies
+- Severity: MINOR
+- Status: OBSERVED
+- Evidence: eval/run_eval.py:219 crashes with UnicodeEncodeError on Windows CP1252 consoles
+  due to '\u0394' unless PYTHONIOENCODING=utf-8 is set. eval/annotator_agreement.py
+  fails due to unlisted openpyxl dependency.
+- Impact on Paper: Hurts external reproducibility on Windows machines.
+- Fix: Document PYTHONIOENCODING=utf-8 in reproducibility instructions; add openpyxl to
+  requirements.txt.
+
+================================================================================
+7. ROBUSTNESS RESULTS
+================================================================================
+[OBSERVED & INFERRED]
+All results below were generated via independent scripts executed in verification/:
+
+A. Arrival Shuffle Seed Sensitivity (30 Seeds):
+   - prioritizer nDCG@5: mean = 0.9530, std = 0.0010, min = 0.9517, max = 0.9551
+   - due_date    nDCG@5: mean = 0.8757, std = 0.0191, min = 0.8474, max = 0.9158
+   - delta (prio - due): mean = +0.0773, std = 0.0186, min = +0.0390, max = +0.1049
+   Conclusion: Prioritizer significantly outperforms due_date across all 30 seeds.
+   The reported seed (+0.067 delta) was actually conservative compared to the 30-seed mean.
+
+B. Stronger Baselines Evaluation (nDCG@5, N=40):
+   - due_date (standard):                0.887  (delta vs prio: -0.067)
+   - due_date_clean (+noise sink):       0.907  (delta vs prio: -0.047)
+   - due_date_kind_tiebreak:             0.891  (delta vs prio: -0.062)
+   - due_date_hybrid (clean + tiebreak): 0.909  (delta vs prio: -0.044)
+   - prioritizer (treatment):            0.954  (delta vs prio: +0.000)
+   Conclusion: Adding an OTP/noise filter lifts due_date by +0.020, but prioritizer retains
+   a clear +0.044 margin over the strongest hybrid heuristic.
+
+C. Prioritizer Component Ablations (nDCG@5, N=40):
+   - Full Prioritizer:                   0.954  (drop:  0.000)
+   - No exam-week context adjustment:    0.951  (drop: -0.003)
+   - No kind weights:                    0.945  (drop: -0.009)
+   - No due-date boost:                  0.927  (drop: -0.027)
+   - No email category weights:          0.916  (drop: -0.038)
+   Conclusion: Sinking OTPs (-3) and boosting internships (+4) accounts for the largest
+   gain; exam week context has minor aggregate effect because it only triggers in 9 scenarios.
+
+D. Date Sensitivity (Clock Patched Across 8 Distinct Calendar Dates):
+   - Tested: Monday, Wednesday, Saturday, Sunday, Month-end (31st), Leap Day, DST change.
+   - Result: 0.000000 metric drift across all dates. Deadlines are offset integers;
+     evaluation is completely date-invariant.
+
+E. Monte Carlo Label Noise Robustness (1,000 Trials):
+   - At 10% random grade perturbation (+/- 1): mean delta = +0.0660 (std = 0.0064).
+     Prioritizer significantly beats due_date (p < 0.05) in 1,000 of 1,000 trials (100.0%).
+   - At 20% random grade perturbation (+/- 1): mean delta = +0.0651 (std = 0.0092).
+     Prioritizer significantly beats due_date (p < 0.05) in 1,000 of 1,000 trials (100.0%).
+   Conclusion: The ranking gap is structural and cannot be explained by single-annotator noise.
+
+F. Gain Function Formulation Comparison:
+   - Linear gain (rel_i):
+       prioritizer nDCG@5 = 0.954, due_date = 0.887, delta = +0.067
+   - Exponential gain (2^rel - 1):
+       prioritizer nDCG@5 = 0.950, due_date = 0.866, delta = +0.084
+   Conclusion: Prioritizer advantage is even larger (+0.084) under standard IR exponential gain.
+
+================================================================================
+8. PUBLISHABILITY VERDICT PER VENUE TIER
+================================================================================
+1. Student Research Competition / Undergraduate Symposium (e.g. SIGIR SRC, local conferences):
+   Verdict: ACCEPT WITH REVISIONS.
+   Methodological rigor (paired Wilcoxon, bootstrap CIs, effect sizes, ablation, noise
+   simulation, honest loss reporting) exceeds standard undergraduate submissions. Must
+   disclose single annotator and author-coupled rules.
+
+2. Applied / LLM-Agent Workshop (e.g. ACL/EMNLP/NeurIPS Workshop on Personal Information
+   Management, Agent Benchmarks, or Desktop AI):
+   Verdict: WEAK ACCEPT / ACCEPT AS SHORT PAPER (4 pages).
+   Novelty cannot be claimed for the architecture or rule-based ranker alone (Gmail Priority
+   Inbox and MCP agents are well established). However, framing the paper around:
+   "Benchmarking Multi-Source Action-Item Prioritization in MCP-Connected Student Agents:
+   Accurate Heuristics, Learned Models, and Robustness Tradeoffs"
+   is a defensible, empirical contribution that reviewers will appreciate for its rigor.
+
+3. Main Conference Track (SIGIR, KDD, ACL Main Track):
+   Verdict: REJECT.
+   Synthetic 40-scenario single-annotator dataset without a live user deployment or
+   statistically verified adversarial benchmark falls short of main-track empirical standards.
+
+================================================================================
+9. PRIORITIZED FIX LIST
+================================================================================
+Minimum Set of Fixes Needed for a Workshop Paper:
+[X] 1. Report Stronger Baselines: Include due_date_clean (+noise sink) in main tables.
+       Effort: 1 hour (Data already in ledger N01, N02). Resolves F03.
+[X] 2. Disclose Author-Coupling and Single Annotator: Explicitly state that rules and
+       scenarios shared single-author origin; cite the Monte Carlo noise simulation (N07)
+       showing stability up to 20% label noise.
+       Effort: 2 hours. Resolves F01, F04.
+[X] 3. Disclose DCG Gain Function: State that linear DCG gain rel_i was used; provide
+       exponential gain comparison (+0.084, N08).
+       Effort: 30 minutes. Resolves F08.
+[X] 4. Report Prioritizer Ablation: Present the ablation table showing the impact of
+       category rules (-0.038) and due-date proximity (-0.027).
+       Effort: 1 hour. Resolves F01.
+[X] 5. Frame Security as Future Work: Drop any claims of prompt-injection robustness
+       from the core contribution; outline the adversarial integrity benchmark spec in
+       Future Work.
+       Effort: 1 hour. Resolves F05.
+
+Longer-Term Improvements (for a full conference submission):
+[ ] 6. Multi-Annotator Dataset: Collect second and third student rater grades via
+       study_kit/annotator_sheet.xlsx and compute quadratic-weighted kappa.
+       Effort: 3-5 days. Resolves F04.
+[ ] 7. Held-Out Evaluation Set: Author 40 new scenarios with an external annotator
+       blind to prioritizer.py rules to test out-of-distribution generalization.
+       Effort: 2-3 days. Resolves F01.
+[ ] 8. Implement Full Adversarial Integrity Benchmark: Implement Rank-Hijack Success Rate
+       and Briefing-Injection Success Rate across ranker x sanitizer variants.
+       Effort: 4-6 days. Resolves F05.
+[ ] 9. User Study: Run a 2-week deployment with 15-20 engineering students measuring
+       daily task completion and missed deadline frequency.
+       Effort: 3-4 weeks.

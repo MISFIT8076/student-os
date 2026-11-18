@@ -1,0 +1,112 @@
+================================================================================
+ STUDENT OS - BENCHMARK AND EVALUATION INVENTORY
+================================================================================
+Generated at: 2026-09-26T17:28:30Z
+
+--------------------------------------------------------------------------------
+BENCHMARK 1: Context-Aware Prioritizer Offline IR Benchmark
+--------------------------------------------------------------------------------
+Path: backend/eval/ (run_eval.py, build_dataset.py, dataset.json, metrics.py, stats.py, rankers.py)
+Research Question:
+  Does context-aware prioritization rank a student's cross-platform action items closer to human judgment than simple heuristics (due-date sorting, arrival order, random)?
+Component Measured:
+  Intelligence layer rankers: prioritizer (rule-based), due_date, source_order, random, and learned (ridge regression).
+Dataset Size:
+  - 40 scenarios total.
+  - 221 total action items across all scenarios.
+  - Items per scenario: min = 4, median = 6, max = 8.
+  - 20 of 40 scenarios (50.0%) contain 5 or fewer items.
+Label Provenance:
+  - Authored by the single repository author in eval/build_dataset.py.
+  - Relevance grades are explicit integer literals in {0, 1, 2, 3}.
+  - No automated generation or rule copying, but authored by the same engineer who designed prioritizer.py.
+How to Run:
+  cd backend && python -m eval.run_eval
+Checked-in Results:
+  eval/results.json and eval/results.csv.
+Doc Usage:
+  Primary basis of docs/EVALUATION.md (reported table of 4 rankers + Wilcoxon and bootstrap CI).
+Status:
+  COMPLETE. All reported numbers reproduce exactly with fixed seeds.
+
+--------------------------------------------------------------------------------
+BENCHMARK 2: Deadline Extraction Benchmark
+--------------------------------------------------------------------------------
+Path: backend/eval/extraction_eval.py, backend/eval/extraction_dataset.json
+Research Question:
+  How accurately can regex-based deterministic parsing extract deadline dates hidden in unstructured announcement and email prose?
+Component Measured:
+  mcp_servers/common/extraction.py (extract_due and enrich_due).
+Dataset Size:
+  - 16 text examples.
+  - 11 positive deadline statements (relative days, weekdays, absolute dates).
+  - 5 negative control examples (discounts, OTPs, newsletters without deadlines).
+Label Provenance:
+  Authored by repository author in eval/extraction_dataset.json with expected offset days relative to fixed anchor date 2026-08-03.
+How to Run:
+  cd backend && python -m eval.extraction_eval
+Checked-in Results:
+  None checked in. Running yields TP=11, FP=0, FN=0, TN=5 (P=1.000, R=1.000, F1=1.000).
+Doc Usage:
+  NOT cited in docs/EVALUATION.md or docs/ARCHITECTURE.md.
+Status:
+  COMPLETE (small unit evaluation; 16 hand-crafted examples).
+
+--------------------------------------------------------------------------------
+BENCHMARK 3: Regex Prompt-Injection Red-Team Benchmark
+--------------------------------------------------------------------------------
+Path: backend/eval/security_eval.py
+Research Question:
+  What fraction of prompt-injection attempts does the regex sanitizer catch, and what is its false-positive rate on benign student messages?
+Component Measured:
+  app/security.py (sanitize, scan, safe_text).
+Dataset Size:
+  - 10 attack strings.
+  - 8 benign strings.
+Label Provenance:
+  Authored directly inside eval/security_eval.py.
+How to Run:
+  cd backend && python -m eval.security_eval
+Checked-in Results:
+  None checked in. Running yields: 10/10 attacks caught (100%), 0/8 benign flagged (0% FPR).
+Doc Usage:
+  Mentioned in CHANGELOG.md v0.16.0. Not reported in EVALUATION.md.
+Status:
+  COMPLETE but TRIVIAL / CIRCULAR: The 10 attack strings were constructed directly to match the 13 regexes in app/security.py. Easily bypassed by adaptive attacks (100% bypass on 10 realistic evasions).
+
+--------------------------------------------------------------------------------
+BENCHMARK 4: Inter-Annotator Agreement Harness
+--------------------------------------------------------------------------------
+Path: backend/eval/annotator_agreement.py, study_kit/annotator_sheet.xlsx
+Research Question:
+  What is the inter-rater reliability (Cohen's unweighted kappa and quadratic-weighted kappa) between the original author and an independent second rater on the 221 benchmark items?
+Component Measured:
+  Benchmark label quality and reproducibility (mitigates single-annotator threat).
+Dataset Size:
+  221 items across 40 scenarios.
+Label Provenance:
+  Original author's gold grades vs external annotator spreadsheet.
+How to Run:
+  cd backend && python -m eval.annotator_agreement study_kit/annotator_sheet.xlsx
+Checked-in Results:
+  None. Running produces: "No grades found yet - fill the yellow 'Your grade' column and re-run."
+Doc Usage:
+  Identified in docs/EVALUATION.md under "Threats to validity".
+Status:
+  STUB / UNFILLED TEMPLATE. The protocol and grading sheet exist, but no second annotator data has been collected.
+
+--------------------------------------------------------------------------------
+BENCHMARK 5: Adversarial Ranking and Briefing Integrity Benchmark (NOVELTY PLAN)
+--------------------------------------------------------------------------------
+Path: Specified in RESEARCH_PAPER_GUIDE.md / Novelty Assessment
+Research Question:
+  How robust is ranking and briefing generation against indirect prompt injection across ranker architectures (rule-based vs learned vs LLM) with sanitizer enabled vs disabled?
+Component Measured:
+  Full pipeline: MCP Server text injection -> Ranker ordering -> Sanitizer -> LLM Briefing.
+Target Metrics:
+  1. Rank-Hijack Success Rate: Frequency with which an attacker-injected low-grade item illegitimately achieves top-1 or top-3 rank.
+  2. Briefing-Injection Success Rate: Frequency with which the LLM briefing obeys or reflects the injected attacker instructions.
+  3. Clean ranking accuracy (nDCG@5) tradeoff across the ranker x sanitizer matrix.
+Current Status:
+  DOES NOT EXIST.
+  Search across the entire codebase confirmed that neither Rank-Hijack Success Rate nor Briefing-Injection Success Rate has been implemented, nor does any injected scenario split exist in eval/. This benchmark exists solely as a research proposal in docs/RESEARCH_PAPER_GUIDE.md.

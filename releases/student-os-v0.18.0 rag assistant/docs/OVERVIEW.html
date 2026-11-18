@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Student OS — Project Overview</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<style>
+  :root{--ink:#1f2733;--muted:#5b6472;--line:#e4e8ef;--bg:#fff;--soft:#f6f8fc;
+    --accent:#2f6bff;--accent-soft:#eaf0ff;--good:#0f9d58;--warn:#e8710a;--urgent:#e5484d;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.6;font-size:16px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:900px;margin:0 auto;padding:30px 22px 70px}
+  header.title{border-bottom:3px solid var(--accent);padding-bottom:16px;margin-bottom:10px}
+  header.title h1{font-size:32px;margin:0 0 4px}
+  header.title p{font-size:18px;color:var(--muted);margin:0}
+  h2{font-size:22px;margin:34px 0 10px;padding-top:8px;border-top:1px solid var(--line)}
+  h3{font-size:17px;margin:18px 0 6px}
+  p{margin:10px 0}
+  code{background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:14px}
+  .lead{font-size:18px}
+  .key{background:var(--accent-soft);border:1px solid #c7d7ff;border-radius:12px;padding:14px 18px;margin:16px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:720px){.grid2{grid-template-columns:1fr}}
+  .card{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .card b{display:block;margin-bottom:2px}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14.5px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--soft)}
+  .diagram{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:16px;margin:18px 0;text-align:center}
+  .diagram .cap{display:block;margin-top:8px;font-size:13px;color:var(--muted)}
+  .metric{font-size:26px;font-weight:700;color:var(--accent)}
+  .pill{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;color:#fff;background:var(--good)}
+  .muted{color:var(--muted)} .small{font-size:13px}
+  ul{margin:8px 0 8px 2px;padding-left:20px} li{margin:3px 0}
+  .warnbox{background:#fff5ec;border:1px solid #ffd6ad;border-radius:10px;padding:12px 16px;margin:16px 0;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="title">
+  <h1>Student OS</h1>
+  <p>An MCP-powered AI assistant for student life — project overview (v0.18.0)</p>
+</header>
+
+<p class="lead">Student OS connects all the apps a student juggles — github, gmail, calendar, codeforces, classroom — and answers one question, <b>"What should I do today?"</b>, with a
+single prioritized, personalized plan. This is the whole project in one page.</p>
+
+<h2>1. The problem &amp; the idea</h2>
+<p>A BTech student runs across 6–8 platforms daily; no single one connects them. Student OS becomes the one coordinator that gathers everything and hands back a single answer.</p>
+
+<div class="diagram">
+<pre class="mermaid">
+flowchart LR
+  G["Gmail"] --> O
+  C["Calendar"] --> O
+  H["GitHub"] --> O
+  F["Codeforces"] --> O
+  R["Classroom"] --> O
+  O["STUDENT OS<br/>one coordinator"] --> P["One ranked, personalized<br/>plan for today"]
+  U["Student"] --> P
+</pre>
+<span class="cap">Multiple noisy inputs → one calm, prioritized answer.</span>
+</div>
+
+<h2>2. What it does (feature highlights)</h2>
+<div class="grid2">
+  <div class="card"><b>Daily briefing</b>One prioritized to-do list across all platforms.</div>
+  <div class="card"><b>Learned prioritizer</b>An ML model ranks by importance and learns from your actions.</div>
+  <div class="card"><b>Deadline extraction</b>Finds due dates hidden in email/announcement text.</div>
+  <div class="card"><b>Day scheduler</b>Time-blocks tasks into your free slots; won't over-plan.</div>
+  <div class="card"><b>Opportunity radar</b>Internships, scholarships, hackathons, contests + application status.</div>
+  <div class="card"><b>Proactive reminders</b>Pushes the brief &amp; deadline alerts to Telegram/email.</div>
+  <div class="card"><b>Safe actions</b>Draft a reply, add an event — always with your confirmation.</div>
+  <div class="card"><b>Security</b>Read-only scopes, encrypted secrets, prompt-injection defence.</div>
+  <div class="card"><b>Progress dashboard</b>Done-streak, actions, application funnel.</div>
+  <div class="card"><b>Notes assistant</b>Ask questions over your own notes (RAG).</div>
+  <div class="card"><b>Smart caching</b>Repeat requests served instantly; Redis or in-memory.</div>
+</div>
+
+<h2>3. How it works (architecture)</h2>
+<div class="diagram">
+<pre class="mermaid">
+flowchart TD
+  U["Student: 'What should I do today?'"]
+  --> FE["Frontend (Next.js: dashboard · chat · progress)"]
+  FE -->|HTTP| API["Backend API (FastAPI)"]
+  API --> ORCH["Orchestrator (tool router + cache)"]
+  ORCH --> SV["5 MCP servers: GitHub · Gmail · Calendar · Codeforces · Classroom"]
+  SV -->|real APIs / mock| EXT["External services"]
+  SV --> INT["Intelligence: extraction · learned ranker · scheduler · opportunities · RAG"]
+  INT --> SEC["Security (sanitize untrusted text)"]
+  SEC --> LLM["LLM writer / rule-based fallback"]
+  LLM --> API
+  API --> DB["Store (SQLite/Postgres): history + feedback → learning &amp; progress"]
+</pre>
+<span class="cap">Each platform is an independent MCP server; the orchestrator fans out, ranks, and plans.</span>
+</div>
+<p class="small muted">Everything degrades gracefully: no accounts → realistic mock data; no AI key →
+rule-based writer; no Redis/DB → in-memory. So it always runs, even with zero setup.</p>
+
+<h2>4. Does it actually work? (measured results)</h2>
+<div class="grid2">
+  <div class="card"><span class="metric">0.968</span><br/>learned ranker nDCG@5 on <b>unseen</b> scenarios (vs 0.887 for due-date sorting) — a significant win (Wilcoxon p≈2e-5).</div>
+  <div class="card"><span class="metric">100% / 0%</span><br/>prompt-injection attacks <b>caught</b> / benign messages wrongly flagged, on a red-team set.</div>
+  <div class="card"><span class="metric">F1 1.00</span><br/>deadline extraction on a labeled set of email/announcement texts.</div>
+  <div class="card"><span class="metric">60</span><br/>automated tests passing; frontend type-checks clean.</div>
+</div>
+<p class="small muted">Full methodology in <code>docs/EVALUATION.md</code>.</p>
+
+<h2>5. The build, version by version</h2>
+<p>The project grew one feature per version (v0.1 → v0.18.0). Each is saved as a runnable snapshot in <code>releases/</code>.</p>
+<table>
+  <tr><th>Versions</th><th>What was added</th></tr>
+  <tr><td>v0.1–0.2</td><td>MCP orchestrator + GitHub/Gmail/Calendar servers + rule-based prioritizer + API + web app</td></tr>
+  <tr><td>v0.3–0.6</td><td>Codeforces server, Google OAuth (real Gmail/Calendar), caching, Classroom server</td></tr>
+  <tr><td>v0.7–0.9</td><td>Evaluation harness, 40-scenario dataset + significance test, documentation</td></tr>
+  <tr><td>v0.10–0.12</td><td>Persistence + feedback, learning-to-rank model, deadline extraction, day-scheduler</td></tr>
+  <tr><td>v0.13–0.15</td><td>Proactive notifier, opportunity radar, safe action layer</td></tr>
+  <tr><td>v0.16–0.18</td><td>Security hardening, progress dashboard, notes RAG assistant</td></tr>
+</table>
+
+<h2>6. How to run it (no accounts needed)</h2>
+<pre style="background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:14px;font-size:13.5px;overflow:auto">
+# Backend — prints today's ranked plan
+cd backend
+python -m venv .venv &amp;&amp; source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+python demo.py
+
+# Web app (separate terminal)
+cd frontend &amp;&amp; npm install &amp;&amp; npm run dev            # http://localhost:3000</pre>
+<p class="small">It runs in <b>mock mode</b> by default (realistic sample data). Connect real
+platforms later via <code>docs/SETUP.md</code>.</p>
+
+<h2>7. Status &amp; what's next</h2>
+<p><span class="pill">Complete</span> Every planned feature is built and tested (v0.18).</p>
+
+<hr style="border:none;border-top:1px solid var(--line);margin:26px 0" />
+<p class="muted small">Student OS — BTech Final Year Project (Information Technology). Team: Nancy Singh,
+Priyanshu Jha, Nimish Aggarwal. Guide: Dr. Varsha Sisaudia.</p>
+
+</div>
+<script>
+  mermaid.initialize({ startOnLoad:true, theme:'base',
+    themeVariables:{ primaryColor:'#eaf0ff', primaryBorderColor:'#2f6bff',
+      primaryTextColor:'#1f2733', lineColor:'#7b88a8', fontSize:'14px' },
+    flowchart:{ curve:'basis', htmlLabels:true }, securityLevel:'loose' });
+</script>
+</body>
+</html>
