@@ -99,7 +99,7 @@ student-os/
 All Must/Should/Could **code** features in `docs/PRODUCT_PLAN.md` are implemented
 and tested (**65 tests passing**; frontend type-checks). The only remaining plan
 item is the **two-week user study** (non-code). See `docs/GUIDE.html` for a
-plain-English tour and `CHANGELOG.md` for what each version added.
+plain-English tour and `CHANGELOG.md` for what each version added..
 
 ## Team
 
