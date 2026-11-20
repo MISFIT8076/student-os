@@ -1,7 +1,7 @@
 # Student OS
 
 **An MCP-powered, learning-based AI coordination layer for student life.**
-BTech Final Year Project — CSE/IT. Current version: **v0.18.0**.
+BTech Final Year Project — CSE/IT. Current version: **v0.18.0**..
 
 Instead of checking eight apps every morning, a student asks one question —
 *"What should I do today?"* — and Student OS reads across their connected
