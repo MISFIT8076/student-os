@@ -96,3 +96,70 @@ class ProposeActionRequest(BaseModel):
 
 class ConfirmActionRequest(BaseModel):
     token: str
+
+
+# ── Auth & Connection Schemas ───────────────────────────────────────────────
+class UserRegisterRequest(BaseModel):
+    email: str
+    name: str
+    password: str = Field(..., min_length=6)
+
+
+class UserLoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class GoogleAuthRequest(BaseModel):
+    credential: Optional[str] = None
+    email: Optional[str] = None
+    name: Optional[str] = None
+    google_id: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+
+class UserOut(BaseModel):
+    id: int
+    email: str
+    name: str
+    avatar_url: Optional[str] = None
+    created_at: str
+
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserOut
+
+
+class ConnectionField(BaseModel):
+    name: str
+    label: str
+    type: str  # text, password, select
+    placeholder: str = ""
+    required: bool = True
+    help_text: str = ""
+
+
+class ConnectionOut(BaseModel):
+    provider: str
+    title: str
+    description: str
+    icon: str
+    is_connected: bool
+    status: str  # connected, disconnected, error
+    meta: dict[str, Any] = Field(default_factory=dict)
+    updated_at: Optional[str] = None
+    fields: list[ConnectionField] = Field(default_factory=list)
+
+
+class ConnectionUpdateRequest(BaseModel):
+    credentials: dict[str, Any]
+
+
+class ConnectionTestResult(BaseModel):
+    provider: str
+    ok: bool
+    message: str
+    data: Optional[dict[str, Any]] = None
+

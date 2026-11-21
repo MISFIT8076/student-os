@@ -11,8 +11,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.routers import (
     actions,
+    auth,
     briefing,
     chat,
+    connections,
     feedback,
     notify,
     opportunities,
@@ -36,6 +38,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
+app.include_router(connections.router)
 app.include_router(briefing.router)
 app.include_router(chat.router)
 app.include_router(feedback.router)

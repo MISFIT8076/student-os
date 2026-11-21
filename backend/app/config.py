@@ -47,6 +47,11 @@ class Settings(BaseSettings):
     backend_host: str = "127.0.0.1"
     backend_port: int = 8000
 
+    # Security & JWT
+    jwt_secret_key: str = "kairo-jwt-secret-key-change-in-production-2026"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 60 * 24 * 7  # 7 days
+
     # Caching. Redis when set + reachable, else in-memory (see app/cache.py).
     redis_url: str = ""
     cache_ttl_seconds: int = 90

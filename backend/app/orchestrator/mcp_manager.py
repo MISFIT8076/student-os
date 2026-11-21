@@ -36,12 +36,14 @@ def _load_registry() -> list[dict]:
     return [s for s in data.get("servers", []) if s.get("enabled", True)]
 
 
-def _child_env() -> dict[str, str]:
+def _child_env(user_id: int | None = None) -> dict[str, str]:
     """Environment passed to each server subprocess.
 
     We forward the real environment (so `python` and tokens resolve) and add
     PYTHONPATH=backend/ so `python -m mcp_servers.<x>.server` imports cleanly
     regardless of the working directory.
+
+    If user_id is provided, dynamically decrypts and injects saved user connections.
     """
     settings = get_settings()
     env = dict(os.environ)
@@ -57,6 +59,31 @@ def _child_env() -> dict[str, str]:
         env["GOOGLE_OAUTH_REDIRECT"] = settings.google_oauth_redirect
     if settings.codeforces_handle:
         env["CODEFORCES_HANDLE"] = settings.codeforces_handle
+
+    if user_id:
+        try:
+            from app.security import TokenVault
+            from app.store import list_user_connections
+
+            vault = TokenVault()
+            for conn in list_user_connections(user_id):
+                if conn.get("status") == "connected" and conn.get("encrypted_credentials"):
+                    try:
+                        raw = vault.decrypt(conn["encrypted_credentials"])
+                        creds = json.loads(raw)
+                        prov = conn.get("provider")
+                        if prov == "github" and creds.get("token"):
+                            env["GITHUB_TOKEN"] = creds["token"]
+                            env["STUDENT_OS_MOCK"] = "false"
+                        elif prov == "codeforces" and creds.get("handle"):
+                            env["CODEFORCES_HANDLE"] = creds["handle"]
+                        elif prov == "gemini" and creds.get("api_key"):
+                            env["GEMINI_API_KEY"] = creds["api_key"]
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
     return env
 
 

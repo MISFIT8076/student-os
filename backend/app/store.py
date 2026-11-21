@@ -82,6 +82,30 @@ opportunity_status = Table(
     Column("updated_at", DateTime, nullable=False),
 )
 
+users = Table(
+    "users",
+    _metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("email", String(255), unique=True, nullable=False, index=True),
+    Column("name", String(255), nullable=False),
+    Column("password_hash", String(255), nullable=True),
+    Column("google_id", String(255), nullable=True, index=True),
+    Column("avatar_url", String(512), nullable=True),
+    Column("created_at", DateTime, nullable=False),
+)
+
+user_connections = Table(
+    "user_connections",
+    _metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("user_id", Integer, nullable=False, index=True),
+    Column("provider", String(50), nullable=False, index=True),
+    Column("encrypted_credentials", Text, nullable=False),
+    Column("status", String(24), nullable=False),
+    Column("meta", Text, nullable=True),
+    Column("updated_at", DateTime, nullable=False),
+)
+
 VALID_ACTIONS = {"opened", "done", "dismissed", "snoozed"}
 VALID_OPP_STATUS = {"new", "interested", "applied", "rejected", "offer", "closed"}
 
@@ -254,3 +278,185 @@ def get_stats() -> dict:
         }
     except Exception:  # noqa: BLE001
         return {"items_shown": 0, "feedback_total": 0, "feedback_by_action": {}, "feedback_by_source": {}}
+
+
+# ── User & Connection Repository (Ready for MongoDB swap) ────────────────────
+def create_user(
+    email: str,
+    name: str,
+    password_hash: str | None = None,
+    google_id: str | None = None,
+    avatar_url: str | None = None,
+) -> dict:
+    ts = datetime.now(timezone.utc)
+    with _engine().begin() as conn:
+        res = conn.execute(
+            insert(users).values(
+                email=email.strip().lower(),
+                name=name.strip(),
+                password_hash=password_hash,
+                google_id=google_id,
+                avatar_url=avatar_url,
+                created_at=ts,
+            )
+        )
+        uid = res.inserted_primary_key[0]
+    return {
+        "id": uid,
+        "email": email.strip().lower(),
+        "name": name.strip(),
+        "password_hash": password_hash,
+        "google_id": google_id,
+        "avatar_url": avatar_url,
+        "created_at": ts.isoformat(),
+    }
+
+
+def get_user_by_email(email: str) -> dict | None:
+    with _engine().begin() as conn:
+        row = conn.execute(
+            select(users).where(users.c.email == email.strip().lower())
+        ).mappings().first()
+        if not row:
+            return None
+        d = dict(row)
+        d["created_at"] = (
+            d["created_at"].isoformat()
+            if hasattr(d["created_at"], "isoformat")
+            else str(d["created_at"])
+        )
+        return d
+
+
+def get_user_by_id(user_id: int) -> dict | None:
+    with _engine().begin() as conn:
+        row = conn.execute(
+            select(users).where(users.c.id == user_id)
+        ).mappings().first()
+        if not row:
+            return None
+        d = dict(row)
+        d["created_at"] = (
+            d["created_at"].isoformat()
+            if hasattr(d["created_at"], "isoformat")
+            else str(d["created_at"])
+        )
+        return d
+
+
+def get_user_by_google_id(google_id: str) -> dict | None:
+    with _engine().begin() as conn:
+        row = conn.execute(
+            select(users).where(users.c.google_id == google_id)
+        ).mappings().first()
+        if not row:
+            return None
+        d = dict(row)
+        d["created_at"] = (
+            d["created_at"].isoformat()
+            if hasattr(d["created_at"], "isoformat")
+            else str(d["created_at"])
+        )
+        return d
+
+
+def list_user_connections(user_id: int) -> list[dict]:
+    with _engine().begin() as conn:
+        rows = conn.execute(
+            select(user_connections).where(user_connections.c.user_id == user_id)
+        ).mappings().all()
+        out = []
+        for r in rows:
+            d = dict(r)
+            d["updated_at"] = (
+                d["updated_at"].isoformat()
+                if hasattr(d["updated_at"], "isoformat")
+                else str(d["updated_at"])
+            )
+            if d.get("meta") and isinstance(d["meta"], str):
+                try:
+                    d["meta"] = json.loads(d["meta"])
+                except Exception:
+                    d["meta"] = {}
+            else:
+                d["meta"] = d.get("meta") or {}
+            out.append(d)
+        return out
+
+
+def get_user_connection(user_id: int, provider: str) -> dict | None:
+    with _engine().begin() as conn:
+        row = conn.execute(
+            select(user_connections).where(
+                (user_connections.c.user_id == user_id)
+                & (user_connections.c.provider == provider)
+            )
+        ).mappings().first()
+        if not row:
+            return None
+        d = dict(row)
+        d["updated_at"] = (
+            d["updated_at"].isoformat()
+            if hasattr(d["updated_at"], "isoformat")
+            else str(d["updated_at"])
+        )
+        if d.get("meta") and isinstance(d["meta"], str):
+            try:
+                d["meta"] = json.loads(d["meta"])
+            except Exception:
+                d["meta"] = {}
+        else:
+            d["meta"] = d.get("meta") or {}
+        return d
+
+
+def upsert_user_connection(
+    user_id: int,
+    provider: str,
+    encrypted_credentials: str,
+    status: str = "connected",
+    meta: dict | None = None,
+) -> None:
+    ts = datetime.now(timezone.utc)
+    meta_json = json.dumps(meta or {})
+    with _engine().begin() as conn:
+        existing = conn.execute(
+            select(user_connections.c.id).where(
+                (user_connections.c.user_id == user_id)
+                & (user_connections.c.provider == provider)
+            )
+        ).scalar()
+        if existing:
+            conn.execute(
+                user_connections.update()
+                .where(user_connections.c.id == existing)
+                .values(
+                    encrypted_credentials=encrypted_credentials,
+                    status=status,
+                    meta=meta_json,
+                    updated_at=ts,
+                )
+            )
+        else:
+            conn.execute(
+                insert(user_connections).values(
+                    user_id=user_id,
+                    provider=provider,
+                    encrypted_credentials=encrypted_credentials,
+                    status=status,
+                    meta=meta_json,
+                    updated_at=ts,
+                )
+            )
+
+
+def delete_user_connection(user_id: int, provider: str) -> bool:
+    with _engine().begin() as conn:
+        res = conn.execute(
+            delete(user_connections).where(
+                (user_connections.c.user_id == user_id)
+                & (user_connections.c.provider == provider)
+            )
+        )
+        return res.rowcount > 0
+
