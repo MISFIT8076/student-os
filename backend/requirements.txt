@@ -18,8 +18,10 @@ google-auth-oauthlib>=1.2.1
 # Caching (optional — omit to use the built-in in-memory cache)
 redis>=5.2.1
 
-# Persistence (SQLite works out of the box; Postgres needs a driver too)
+# Persistence (SQLite works out of the box; Postgres needs a driver too; MongoDB Atlas supported)
 sqlalchemy>=2.0.36
+pymongo>=4.6.0
+dnspython>=2.6.0
 
 # Learning-to-rank model + RAG retrieval (feature math, training, TF-IDF)
 numpy>=2.2.6

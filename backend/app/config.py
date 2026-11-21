@@ -60,6 +60,8 @@ class Settings(BaseSettings):
     # postgresql://... string to use Postgres instead. See app/store.py.
     database_url: str = ""
     persist_enabled: bool = True
+    mongodb_uri: str = ""
+    mongodb_db_name: str = "student_os"
 
     # Which ranker the runtime uses: "rule" (baseline) or "learned".
     ranker: str = "rule"

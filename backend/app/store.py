@@ -139,6 +139,92 @@ def _engine():
     return eng
 
 
+@lru_cache
+def _mongo_db():
+    """Return a pymongo Database instance if MONGODB_URI is configured and reachable."""
+    settings = get_settings()
+    if not settings.mongodb_uri:
+        return None
+    try:
+        from pymongo import MongoClient
+        client = MongoClient(settings.mongodb_uri, serverSelectionTimeoutMS=3000)
+        client.admin.command("ping")
+        return client[settings.mongodb_db_name or "student_os"]
+    except Exception:
+        return None
+
+
+def sync_sqlite_to_mongodb() -> dict:
+    """Safely mirror local SQLite records into MongoDB Atlas if collections are empty."""
+    mdb = _mongo_db()
+    if mdb is None:
+        return {"status": "skipped", "reason": "mongodb_not_configured"}
+
+    synced = {}
+    try:
+        with _engine().begin() as conn:
+            # Sync shown_items
+            if mdb["shown_items"].count_documents({}) == 0:
+                rows = [dict(r) for r in conn.execute(select(shown_items)).mappings().all()]
+                for r in rows:
+                    r.pop("id", None)
+                    r["ts"] = r["ts"].isoformat() if hasattr(r["ts"], "isoformat") else str(r["ts"])
+                if rows:
+                    mdb["shown_items"].insert_many(rows, ordered=False)
+                synced["shown_items"] = len(rows)
+
+            # Sync feedback
+            if mdb["feedback"].count_documents({}) == 0:
+                rows = [dict(r) for r in conn.execute(select(feedback)).mappings().all()]
+                for r in rows:
+                    r.pop("id", None)
+                    r["ts"] = r["ts"].isoformat() if hasattr(r["ts"], "isoformat") else str(r["ts"])
+                if rows:
+                    mdb["feedback"].insert_many(rows, ordered=False)
+                synced["feedback"] = len(rows)
+
+            # Sync opportunity_status
+            if mdb["opportunity_status"].count_documents({}) == 0:
+                rows = [dict(r) for r in conn.execute(select(opportunity_status)).mappings().all()]
+                for r in rows:
+                    r["updated_at"] = r["updated_at"].isoformat() if hasattr(r["updated_at"], "isoformat") else str(r["updated_at"])
+                if rows:
+                    mdb["opportunity_status"].insert_many(rows, ordered=False)
+                synced["opportunity_status"] = len(rows)
+
+            # Sync users
+            if mdb["users"].count_documents({}) == 0:
+                rows = [dict(r) for r in conn.execute(select(users)).mappings().all()]
+                for r in rows:
+                    r["created_at"] = r["created_at"].isoformat() if hasattr(r["created_at"], "isoformat") else str(r["created_at"])
+                if rows:
+                    mdb["users"].insert_many(rows, ordered=False)
+                synced["users"] = len(rows)
+
+            # Sync user_connections
+            if mdb["user_connections"].count_documents({}) == 0:
+                rows = [dict(r) for r in conn.execute(select(user_connections)).mappings().all()]
+                for r in rows:
+                    r["updated_at"] = r["updated_at"].isoformat() if hasattr(r["updated_at"], "isoformat") else str(r["updated_at"])
+                if rows:
+                    mdb["user_connections"].insert_many(rows, ordered=False)
+                synced["user_connections"] = len(rows)
+
+            # Sync custom_tasks
+            if mdb["custom_tasks"].count_documents({}) == 0:
+                rows = [dict(r) for r in conn.execute(select(custom_tasks)).mappings().all()]
+                for r in rows:
+                    r.pop("id", None)
+                    r["created_at"] = r["created_at"].isoformat() if hasattr(r["created_at"], "isoformat") else str(r["created_at"])
+                if rows:
+                    mdb["custom_tasks"].insert_many(rows, ordered=False)
+                synced["custom_tasks"] = len(rows)
+
+        return {"status": "ok", "synced": synced}
+    except Exception as exc:
+        return {"status": "error", "reason": str(exc)}
+
+
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -151,8 +237,11 @@ def record_briefing(items: list, ranker: str, features_by_key: dict | None = Non
     stamp = _now()
     briefing_ts = stamp.isoformat(timespec="seconds")
     rows = []
+    mongo_docs = []
     for pos, it in enumerate(items, start=1):
         key = item_key(it.source, it.title, it.due)
+        feat_json = json.dumps(features_by_key.get(key, {}))
+        priority_val = it.priority.value if hasattr(it.priority, "value") else str(it.priority)
         rows.append(
             {
                 "ts": stamp,
@@ -164,11 +253,34 @@ def record_briefing(items: list, ranker: str, features_by_key: dict | None = Non
                 "due": it.due,
                 "rank_position": pos,
                 "score": float(it.score),
-                "priority": it.priority.value if hasattr(it.priority, "value") else str(it.priority),
+                "priority": priority_val,
                 "ranker": ranker,
-                "features": json.dumps(features_by_key.get(key, {})),
+                "features": feat_json,
             }
         )
+        mongo_docs.append(
+            {
+                "ts": stamp.isoformat(),
+                "briefing_ts": briefing_ts,
+                "item_key": key,
+                "source": it.source,
+                "kind": it.kind,
+                "title": it.title,
+                "due": it.due,
+                "rank_position": pos,
+                "score": float(it.score),
+                "priority": priority_val,
+                "ranker": ranker,
+                "features": feat_json,
+            }
+        )
+    try:
+        mdb = _mongo_db()
+        if mdb is not None and mongo_docs:
+            mdb["shown_items"].insert_many(mongo_docs, ordered=False)
+    except Exception:
+        pass
+
     try:
         with _engine().begin() as conn:
             conn.execute(insert(shown_items), rows)
@@ -181,13 +293,29 @@ def record_feedback(source: str, kind: str, title: str, due: str | None, action:
     """Log a student action on an item."""
     if action not in VALID_ACTIONS:
         raise ValueError(f"action must be one of {sorted(VALID_ACTIONS)}")
+    now = _now()
+    key = item_key(source, title, due)
+    try:
+        mdb = _mongo_db()
+        if mdb is not None:
+            mdb["feedback"].insert_one({
+                "ts": now.isoformat(),
+                "item_key": key,
+                "source": source,
+                "kind": kind,
+                "title": title,
+                "action": action,
+            })
+    except Exception:
+        pass
+
     try:
         with _engine().begin() as conn:
             conn.execute(
                 insert(feedback),
                 [{
-                    "ts": _now(),
-                    "item_key": item_key(source, title, due),
+                    "ts": now,
+                    "item_key": key,
                     "source": source,
                     "kind": kind,
                     "title": title,
@@ -205,12 +333,33 @@ def set_opportunity_status(source: str, title: str, due: str | None, kind: str,
     if status not in VALID_OPP_STATUS:
         raise ValueError(f"status must be one of {sorted(VALID_OPP_STATUS)}")
     key = item_key(source, title, due)
+    now = _now()
+    try:
+        mdb = _mongo_db()
+        if mdb is not None:
+            mdb["opportunity_status"].replace_one(
+                {"item_key": key},
+                {
+                    "item_key": key,
+                    "source": source,
+                    "title": title,
+                    "due": due,
+                    "kind": kind,
+                    "otype": otype,
+                    "status": status,
+                    "updated_at": now.isoformat(),
+                },
+                upsert=True,
+            )
+    except Exception:
+        pass
+
     try:
         with _engine().begin() as conn:
             conn.execute(delete(opportunity_status).where(opportunity_status.c.item_key == key))
             conn.execute(insert(opportunity_status), [{
                 "item_key": key, "source": source, "title": title, "due": due,
-                "kind": kind, "otype": otype, "status": status, "updated_at": _now(),
+                "kind": kind, "otype": otype, "status": status, "updated_at": now,
             }])
         return True
     except Exception:  # noqa: BLE001
@@ -219,6 +368,16 @@ def set_opportunity_status(source: str, title: str, due: str | None, kind: str,
 
 def get_opportunity_statuses() -> dict[str, str]:
     """Map item_key -> status for all tracked opportunities."""
+    try:
+        mdb = _mongo_db()
+        if mdb is not None:
+            docs = mdb["opportunity_status"].find({}, {"item_key": 1, "status": 1, "_id": 0})
+            res = {d["item_key"]: d["status"] for d in docs if "item_key" in d and "status" in d}
+            if res:
+                return res
+    except Exception:
+        pass
+
     try:
         with _engine().begin() as conn:
             rows = conn.execute(
@@ -296,7 +455,7 @@ def get_stats() -> dict:
         return {"items_shown": 0, "feedback_total": 0, "feedback_by_action": {}, "feedback_by_source": {}}
 
 
-# ── User & Connection Repository (Ready for MongoDB swap) ────────────────────
+# ── User & Connection Repository (MongoDB Atlas with SQLite Fallback) ──────
 def create_user(
     email: str,
     name: str,
@@ -305,11 +464,14 @@ def create_user(
     avatar_url: str | None = None,
 ) -> dict:
     ts = datetime.now(timezone.utc)
+    email_clean = email.strip().lower()
+    name_clean = name.strip()
+
     with _engine().begin() as conn:
         res = conn.execute(
             insert(users).values(
-                email=email.strip().lower(),
-                name=name.strip(),
+                email=email_clean,
+                name=name_clean,
                 password_hash=password_hash,
                 google_id=google_id,
                 avatar_url=avatar_url,
@@ -317,21 +479,45 @@ def create_user(
             )
         )
         uid = res.inserted_primary_key[0]
-    return {
+
+    user_dict = {
         "id": uid,
-        "email": email.strip().lower(),
-        "name": name.strip(),
+        "email": email_clean,
+        "name": name_clean,
         "password_hash": password_hash,
         "google_id": google_id,
         "avatar_url": avatar_url,
         "created_at": ts.isoformat(),
     }
 
+    try:
+        mdb = _mongo_db()
+        if mdb is not None:
+            mdb["users"].replace_one(
+                {"email": email_clean},
+                user_dict,
+                upsert=True,
+            )
+    except Exception:
+        pass
+
+    return user_dict
+
 
 def get_user_by_email(email: str) -> dict | None:
+    email_clean = email.strip().lower()
+    try:
+        mdb = _mongo_db()
+        if mdb is not None:
+            doc = mdb["users"].find_one({"email": email_clean}, {"_id": 0})
+            if doc:
+                return doc
+    except Exception:
+        pass
+
     with _engine().begin() as conn:
         row = conn.execute(
-            select(users).where(users.c.email == email.strip().lower())
+            select(users).where(users.c.email == email_clean)
         ).mappings().first()
         if not row:
             return None
@@ -345,6 +531,15 @@ def get_user_by_email(email: str) -> dict | None:
 
 
 def get_user_by_id(user_id: int) -> dict | None:
+    try:
+        mdb = _mongo_db()
+        if mdb is not None:
+            doc = mdb["users"].find_one({"id": user_id}, {"_id": 0})
+            if doc:
+                return doc
+    except Exception:
+        pass
+
     with _engine().begin() as conn:
         row = conn.execute(
             select(users).where(users.c.id == user_id)
@@ -361,6 +556,15 @@ def get_user_by_id(user_id: int) -> dict | None:
 
 
 def get_user_by_google_id(google_id: str) -> dict | None:
+    try:
+        mdb = _mongo_db()
+        if mdb is not None:
+            doc = mdb["users"].find_one({"google_id": google_id}, {"_id": 0})
+            if doc:
+                return doc
+    except Exception:
+        pass
+
     with _engine().begin() as conn:
         row = conn.execute(
             select(users).where(users.c.google_id == google_id)
@@ -377,6 +581,18 @@ def get_user_by_google_id(google_id: str) -> dict | None:
 
 
 def list_user_connections(user_id: int) -> list[dict]:
+    try:
+        mdb = _mongo_db()
+        if mdb is not None:
+            docs = list(mdb["user_connections"].find({"user_id": user_id}, {"_id": 0}))
+            if docs:
+                for d in docs:
+                    if not isinstance(d.get("meta"), dict):
+                        d["meta"] = {}
+                return docs
+    except Exception:
+        pass
+
     with _engine().begin() as conn:
         rows = conn.execute(
             select(user_connections).where(user_connections.c.user_id == user_id)
@@ -401,6 +617,20 @@ def list_user_connections(user_id: int) -> list[dict]:
 
 
 def get_user_connection(user_id: int, provider: str) -> dict | None:
+    try:
+        mdb = _mongo_db()
+        if mdb is not None:
+            doc = mdb["user_connections"].find_one(
+                {"user_id": user_id, "provider": provider},
+                {"_id": 0}
+            )
+            if doc:
+                if not isinstance(doc.get("meta"), dict):
+                    doc["meta"] = {}
+                return doc
+    except Exception:
+        pass
+
     with _engine().begin() as conn:
         row = conn.execute(
             select(user_connections).where(
@@ -434,7 +664,27 @@ def upsert_user_connection(
     meta: dict | None = None,
 ) -> None:
     ts = datetime.now(timezone.utc)
-    meta_json = json.dumps(meta or {})
+    meta_dict = meta or {}
+    meta_json = json.dumps(meta_dict)
+
+    try:
+        mdb = _mongo_db()
+        if mdb is not None:
+            mdb["user_connections"].replace_one(
+                {"user_id": user_id, "provider": provider},
+                {
+                    "user_id": user_id,
+                    "provider": provider,
+                    "encrypted_credentials": encrypted_credentials,
+                    "status": status,
+                    "meta": meta_dict,
+                    "updated_at": ts.isoformat(),
+                },
+                upsert=True,
+            )
+    except Exception:
+        pass
+
     with _engine().begin() as conn:
         existing = conn.execute(
             select(user_connections.c.id).where(
@@ -467,6 +717,13 @@ def upsert_user_connection(
 
 
 def delete_user_connection(user_id: int, provider: str) -> bool:
+    try:
+        mdb = _mongo_db()
+        if mdb is not None:
+            mdb["user_connections"].delete_one({"user_id": user_id, "provider": provider})
+    except Exception:
+        pass
+
     with _engine().begin() as conn:
         res = conn.execute(
             delete(user_connections).where(
@@ -494,6 +751,20 @@ def create_custom_task(title: str, detail: str = "", due: str | None = None,
         "created_at": now,
         "is_done": 0,
     }
+
+    try:
+        mdb = _mongo_db()
+        if mdb is not None:
+            mongo_doc = dict(row)
+            mongo_doc["created_at"] = now.isoformat()
+            mdb["custom_tasks"].replace_one(
+                {"item_key": key},
+                mongo_doc,
+                upsert=True,
+            )
+    except Exception:
+        pass
+
     with _engine().begin() as conn:
         conn.execute(delete(custom_tasks).where(custom_tasks.c.item_key == key))
         conn.execute(insert(custom_tasks), [row])
@@ -510,6 +781,18 @@ def create_custom_task(title: str, detail: str = "", due: str | None = None,
 
 def get_active_custom_tasks() -> list[dict]:
     """Return all unfinished user-defined tasks."""
+    try:
+        mdb = _mongo_db()
+        if mdb is not None:
+            docs = list(mdb["custom_tasks"].find(
+                {"is_done": 0},
+                {"_id": 0, "item_key": 1, "source": 1, "kind": 1, "title": 1, "detail": 1, "due": 1, "priority": 1}
+            ))
+            if docs:
+                return docs
+    except Exception:
+        pass
+
     try:
         with _engine().begin() as conn:
             rows = conn.execute(
@@ -536,19 +819,36 @@ def list_custom_tasks(include_done: bool = False) -> list[dict]:
 def mark_task_done(source: str, title: str, due: str | None = None, kind: str = "task") -> bool:
     """Mark any task (custom or from MCP) as completed and reward the habit streak."""
     key = item_key(source, title, due)
+    now = _now()
+    try:
+        mdb = _mongo_db()
+        if mdb is not None:
+            mdb["custom_tasks"].update_one(
+                {"item_key": key},
+                {"$set": {"is_done": 1}}
+            )
+            mdb["feedback"].insert_one({
+                "ts": now.isoformat(),
+                "item_key": key,
+                "source": source,
+                "kind": kind,
+                "title": title,
+                "action": "done",
+            })
+    except Exception:
+        pass
+
     try:
         with _engine().begin() as conn:
-            # If it's in custom_tasks, mark is_done = 1
             conn.execute(
                 update(custom_tasks)
                 .where(custom_tasks.c.item_key == key)
                 .values(is_done=1)
             )
-            # Record in feedback for habit streaks and viva progress tracking
             conn.execute(
                 insert(feedback),
                 [{
-                    "ts": _now(),
+                    "ts": now,
                     "item_key": key,
                     "source": source,
                     "kind": kind,
@@ -564,6 +864,13 @@ def mark_task_done(source: str, title: str, due: str | None = None, kind: str = 
 def delete_custom_task(item_key_str: str) -> bool:
     """Delete a custom task by its item key."""
     try:
+        mdb = _mongo_db()
+        if mdb is not None:
+            mdb["custom_tasks"].delete_one({"item_key": item_key_str})
+    except Exception:
+        pass
+
+    try:
         with _engine().begin() as conn:
             conn.execute(delete(custom_tasks).where(custom_tasks.c.item_key == item_key_str))
         return True
@@ -573,6 +880,19 @@ def delete_custom_task(item_key_str: str) -> bool:
 
 def get_done_item_keys() -> set[str]:
     """Return keys of all items marked as done."""
+    keys: set[str] = set()
+    try:
+        mdb = _mongo_db()
+        if mdb is not None:
+            for d in mdb["custom_tasks"].find({"is_done": 1}, {"item_key": 1, "_id": 0}):
+                if k := d.get("item_key"):
+                    keys.add(k)
+            for d in mdb["feedback"].find({"action": "done"}, {"item_key": 1, "_id": 0}):
+                if k := d.get("item_key"):
+                    keys.add(k)
+    except Exception:
+        pass
+
     try:
         with _engine().begin() as conn:
             fb_done = conn.execute(
@@ -581,8 +901,10 @@ def get_done_item_keys() -> set[str]:
             task_done = conn.execute(
                 select(custom_tasks.c.item_key).where(custom_tasks.c.is_done == 1)
             ).scalars().all()
-            return set(fb_done) | set(task_done)
+            keys.update(fb_done)
+            keys.update(task_done)
     except Exception:  # noqa: BLE001
-        return set()
+        pass
+    return keys
 
 
