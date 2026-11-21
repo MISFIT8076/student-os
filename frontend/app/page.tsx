@@ -5,6 +5,7 @@ import BriefingPanel from "@/components/BriefingPanel";
 import ChatPanel from "@/components/ChatPanel";
 import KairoLogo from "@/components/KairoLogo";
 import ThemeToggle from "@/components/ThemeToggle";
+import FocusModeModal from "@/components/FocusModeModal";
 import { getBriefing } from "@/lib/api";
 import type { Briefing } from "@/lib/types";
 
@@ -13,6 +14,23 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentDateStr, setCurrentDateStr] = useState<string>("");
+  const [isFocusOpen, setIsFocusOpen] = useState(false);
+
+  // Keyboard shortcut: Press 'F' to toggle focus mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      const isInput =
+        activeEl?.tagName === "INPUT" ||
+        activeEl?.tagName === "TEXTAREA" ||
+        (activeEl as HTMLElement)?.isContentEditable;
+      if (e.key.toLowerCase() === "f" && !isInput && !e.metaKey && !e.ctrlKey) {
+        setIsFocusOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     const today = new Date();
@@ -62,6 +80,16 @@ export default function Home() {
             <span className="status-divider">·</span>
             <span className="status-platform-text">5 MCP Tools Active</span>
           </div>
+
+          <button
+            className="super-focus-btn"
+            onClick={() => setIsFocusOpen(true)}
+            title="Enter Super Focus Sanctuary (Press F)"
+          >
+            <span className="focus-btn-sparkle">✦</span>
+            <span className="focus-btn-label">Super Focus</span>
+            <span className="focus-btn-shortcut">F</span>
+          </button>
 
           <a className="nav-btn-link" href="/progress" title="View historical habits and streaks">
             <span>Progress & Habits</span>
@@ -139,6 +167,13 @@ export default function Home() {
           </a>
         </div>
       </footer>
+
+      {/* Super Focus Mode Chamber */}
+      <FocusModeModal
+        isOpen={isFocusOpen}
+        onClose={() => setIsFocusOpen(false)}
+        items={briefing?.items ?? []}
+      />
     </main>
   );
 }
