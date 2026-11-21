@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { Briefing } from "@/lib/types";
+import type { Briefing, ActionItem } from "@/lib/types";
 import PriorityBadge from "./PriorityBadge";
 import ScheduleView from "./ScheduleView";
 import OpportunityView from "./OpportunityView";
+import CreateTaskModal from "./CreateTaskModal";
 
 const SOURCE_META: Record<
   string,
@@ -15,6 +16,8 @@ const SOURCE_META: Record<
   calendar: { label: "Calendar", icon: "◷", color: "#0284c7", badge: "src-cal" },
   codeforces: { label: "Codeforces", icon: "⚔", color: "#f59e0b", badge: "src-cf" },
   classroom: { label: "Classroom", icon: "🎓", color: "#10b981", badge: "src-class" },
+  personal: { label: "Personal", icon: "✦", color: "#f59e0b", badge: "src-personal" },
+  college: { label: "College", icon: "🏛", color: "#38bdf8", badge: "src-college" },
 };
 
 function daysLabel(due?: string | null): { text: string; urgent: boolean } | null {
@@ -35,17 +38,24 @@ export default function BriefingPanel({
   loading,
   error,
   onRefresh,
+  onMarkDone,
+  onCreateTask,
 }: {
   briefing: Briefing | null;
   loading: boolean;
   error: string | null;
   onRefresh: () => void;
+  onMarkDone?: (item: ActionItem) => void;
+  onCreateTask?: (item: ActionItem) => void;
 }) {
   const [activeTab, setActiveTab] = useState<"priorities" | "schedule" | "radar">(
     "priorities"
   );
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [completingKeys, setCompletingKeys] = useState<Set<string>>(new Set());
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const filteredItems = useMemo(() => {
     if (!briefing) return [];
@@ -59,6 +69,25 @@ export default function BriefingPanel({
       return matchSource && matchSearch;
     });
   }, [briefing, sourceFilter, search]);
+
+  const handleDoneClick = (it: ActionItem) => {
+    const key = `${it.source}-${it.title}-${it.due || ""}`;
+    setCompletingKeys((prev) => new Set(prev).add(key));
+    setToastMessage(`Decisive action complete: "${it.title}"`);
+
+    setTimeout(() => {
+      onMarkDone?.(it);
+      setCompletingKeys((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+    }, 280);
+
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 4000);
+  };
 
   return (
     <section className="panel main-briefing-panel">
@@ -91,18 +120,38 @@ export default function BriefingPanel({
           </button>
         </div>
 
-        <button
-          className="btn btn-secondary btn-refresh"
-          onClick={onRefresh}
-          disabled={loading}
-          title="Re-synchronize all connected MCP platforms"
-        >
-          <span className={`refresh-icon ${loading ? "spinning" : ""}`}>↻</span>
-          <span>{loading ? "Aligning…" : "Sync"}</span>
-        </button>
+        <div className="nav-actions-group">
+          <button
+            className="btn btn-primary btn-create-task"
+            onClick={() => setIsCreateOpen(true)}
+            title="Create a new manual task or deadline"
+          >
+            <span className="create-task-sparkle">✦</span>
+            <span>New Task</span>
+          </button>
+
+          <button
+            className="btn btn-secondary btn-refresh"
+            onClick={onRefresh}
+            disabled={loading}
+            title="Re-synchronize all connected MCP platforms"
+          >
+            <span className={`refresh-icon ${loading ? "spinning" : ""}`}>↻</span>
+            <span>{loading ? "Aligning…" : "Sync"}</span>
+          </button>
+        </div>
       </div>
 
       {error && <div className="alert">{error}</div>}
+
+      {/* Completion feedback banner */}
+      {toastMessage && (
+        <div className="done-toast-banner">
+          <span className="done-toast-check">✓</span>
+          <span>{toastMessage}</span>
+          <span className="done-toast-streak">Streak Honored 🔥</span>
+        </div>
+      )}
 
       {/* VIEW 1: RANKED PRIORITIES */}
       {activeTab === "priorities" && (
@@ -208,11 +257,15 @@ export default function BriefingPanel({
                     color: "var(--accent)",
                   };
                   const dueInfo = daysLabel(it.due);
+                  const itemKey = `${it.source}-${it.title}-${it.due || ""}`;
+                  const isCompleting = completingKeys.has(itemKey);
 
                   return (
                     <li
-                      key={`${it.source}-${i}`}
-                      className={`kairo-item-card priority-${it.priority}`}
+                      key={`${it.source}-${i}-${it.title}`}
+                      className={`kairo-item-card priority-${it.priority} ${
+                        isCompleting ? "item-completing" : ""
+                      }`}
                     >
                       <div
                         className="item-source-badge"
@@ -258,6 +311,19 @@ export default function BriefingPanel({
                           )}
                         </div>
                       </div>
+
+                      {/* Done Completion Action Button */}
+                      <div className="item-actions-col">
+                        <button
+                          className="btn-mark-done"
+                          onClick={() => handleDoneClick(it)}
+                          title="Mark task completed and honor habit streak"
+                          disabled={isCompleting}
+                        >
+                          <span className="done-check-icon">✓</span>
+                          <span className="done-btn-text">Done</span>
+                        </button>
+                      </div>
                     </li>
                   );
                 })}
@@ -293,6 +359,17 @@ export default function BriefingPanel({
 
       {/* VIEW 3: OPPORTUNITY RADAR */}
       {activeTab === "radar" && <OpportunityView />}
+
+      {/* Create Task Modal */}
+      <CreateTaskModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onCreated={(item) => {
+          onCreateTask?.(item);
+          setToastMessage(`✦ Added new task: "${item.title}"`);
+          setTimeout(() => setToastMessage(null), 3500);
+        }}
+      />
     </section>
   );
 }

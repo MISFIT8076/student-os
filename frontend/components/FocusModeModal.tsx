@@ -9,6 +9,7 @@ interface FocusModeModalProps {
   isOpen: boolean;
   onClose: () => void;
   items: ActionItem[];
+  onMarkDone?: (item: ActionItem) => void;
 }
 
 const SPOTIFY_PLAYLISTS = [
@@ -36,7 +37,7 @@ function getInitialDuration(kind?: string): number {
   }
 }
 
-export default function FocusModeModal({ isOpen, onClose, items }: FocusModeModalProps) {
+export default function FocusModeModal({ isOpen, onClose, items, onMarkDone }: FocusModeModalProps) {
   const [taskIndex, setTaskIndex] = useState(0);
   const currentTask = items[taskIndex] || null;
 
@@ -299,7 +300,9 @@ export default function FocusModeModal({ isOpen, onClose, items }: FocusModeModa
                     onClick={() => {
                       setIsRunning(false);
                       setIsCompleted(true);
-                      alert("Decisive action completed! Streak honored in Kairo.");
+                      if (currentTask) {
+                        onMarkDone?.(currentTask);
+                      }
                     }}
                     title="Mark this task as finished"
                   >

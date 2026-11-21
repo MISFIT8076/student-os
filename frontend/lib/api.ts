@@ -1,4 +1,4 @@
-import type { Briefing, ChatResponse, Progress, DaySchedule, OpportunityItem } from "./types";
+import type { Briefing, ChatResponse, Progress, DaySchedule, OpportunityItem, ActionItem } from "./types";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE ?? "http://127.0.0.1:8000";
@@ -50,6 +50,36 @@ export function updateOpportunityStatus(req: {
     method: "POST",
     body: JSON.stringify(req),
   });
+}
+
+export function createTask(req: {
+  title: string;
+  detail?: string;
+  due?: string | null;
+  priority?: string;
+  kind?: string;
+  source?: string;
+}): Promise<ActionItem> {
+  return json<ActionItem>("/tasks", {
+    method: "POST",
+    body: JSON.stringify(req),
+  });
+}
+
+export function markTaskDone(req: {
+  source: string;
+  title: string;
+  due?: string | null;
+  kind?: string;
+}): Promise<{ ok: boolean }> {
+  return json<{ ok: boolean }>("/tasks/done", {
+    method: "POST",
+    body: JSON.stringify(req),
+  });
+}
+
+export function getTasks(): Promise<ActionItem[]> {
+  return json<ActionItem[]>("/tasks");
 }
 
 export { API_BASE };
