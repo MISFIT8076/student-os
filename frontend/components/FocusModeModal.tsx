@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type { ActionItem } from "@/lib/types";
 import PriorityBadge from "./PriorityBadge";
+import ThemeToggle from "./ThemeToggle";
 
 interface FocusModeModalProps {
   isOpen: boolean;
@@ -11,10 +12,11 @@ interface FocusModeModalProps {
 }
 
 const SPOTIFY_PLAYLISTS = [
-  { id: "37i9dQZF1DX8Uebhn9wvtS", name: "☕ Lofi Beats", desc: "Chill beats for focus" },
+  { id: "37i9dQZF1DWWQRwui0ExPn", name: "☕ Lofi Beats", desc: "Chill beats for focus" },
   { id: "37i9dQZF1DWZeKCadgRdKQ", name: "🧠 Deep Focus", desc: "Ambient & alpha waves" },
   { id: "37i9dQZF1DWVfe3KKLfQdk", name: "🎻 Classical Study", desc: "Calm classical mastery" },
   { id: "37i9dQZF1DXdLEN7aqioXM", name: "⚡ Synthwave Coding", desc: "Retro electro flow" },
+  { id: "37i9dQZF1DX4sWSpwq3LiO", name: "🎹 Peaceful Piano", desc: "Gentle piano focus" },
 ];
 
 function getInitialDuration(kind?: string): number {
@@ -50,6 +52,7 @@ export default function FocusModeModal({ isOpen, onClose, items }: FocusModeModa
 
   // Spotify states
   const [showSpotify, setShowSpotify] = useState(true);
+  const [isExpandedPlayer, setIsExpandedPlayer] = useState(false);
   const [selectedPlaylist, setSelectedPlaylist] = useState(SPOTIFY_PLAYLISTS[0].id);
   const [customLink, setCustomLink] = useState("");
   const [customEmbedUrl, setCustomEmbedUrl] = useState<string | null>(null);
@@ -118,7 +121,7 @@ export default function FocusModeModal({ isOpen, onClose, items }: FocusModeModa
     if (!trimmed) return;
 
     // Support links like:
-    // https://open.spotify.com/playlist/37i9dQZF1DX8Uebhn9wvtS?...
+    // https://open.spotify.com/playlist/...
     // https://open.spotify.com/album/...
     // https://open.spotify.com/track/...
     const match = trimmed.match(/open\.spotify\.com\/(playlist|album|track|artist)\/([a-zA-Z0-9]+)/);
@@ -137,37 +140,48 @@ export default function FocusModeModal({ isOpen, onClose, items }: FocusModeModa
     `https://open.spotify.com/embed/playlist/${selectedPlaylist}?utm_source=generator&theme=0`;
 
   return (
-    <div className="focus-modal-overlay">
-      {/* Background ambient orbs */}
-      <div className="focus-ambient-orb orb-1" />
-      <div className="focus-ambient-orb orb-2" />
+    <div className="focus-fullscreen-sanctuary">
+      {/* Dynamic Animated Ambient Orbs */}
+      <div className="focus-mesh-orb orb-gold" />
+      <div className="focus-mesh-orb orb-blue" />
+      <div className="focus-mesh-orb orb-violet" />
 
-      {/* Glass Chamber Container */}
-      <div className="focus-chamber">
-        {/* Top bar */}
-        <div className="focus-chamber-header">
+      {/* iPhone Glass Mirror Surface Reflection Layer */}
+      <div className="focus-mirror-sheen" />
+
+      {/* Main Fullscreen Chamber Wrapper */}
+      <div className="focus-chamber-full">
+        {/* Top Floating Glass Header */}
+        <header className="focus-chamber-header">
           <div className="focus-brand-pill">
             <span className="focus-sparkle">✦</span>
             <span className="focus-brand-text">KAIROS FOCUS SANCTUARY</span>
-            <span className="focus-tag-pill">One Task · Zero Noise</span>
           </div>
 
-          <button
-            className="focus-exit-btn"
-            onClick={onClose}
-            title="Exit Super Focus Mode (Esc)"
-          >
-            <span>Exit Focus</span>
-            <span className="esc-key">Esc</span>
-          </button>
-        </div>
+          <div className="focus-center-status">
+            <span className="focus-live-dot pulse" />
+            <span className="focus-status-motto">One Task · Zero Noise · Supreme Flow</span>
+          </div>
 
-        {/* Central Monastic Card */}
-        <div className="focus-content-wrap">
+          <div className="focus-header-actions">
+            <ThemeToggle />
+            <button
+              className="focus-exit-btn"
+              onClick={onClose}
+              title="Exit Super Focus Sanctuary (Esc)"
+            >
+              <span>Exit Focus</span>
+              <span className="esc-key">Esc</span>
+            </button>
+          </div>
+        </header>
+
+        {/* Central Monastic Core */}
+        <main className="focus-central-core">
           {currentTask ? (
-            <>
-              {/* Task Header & Context */}
-              <div className="focus-task-card">
+            <div className="focus-core-layout">
+              {/* Task Glass Island */}
+              <section className="focus-task-island">
                 <div className="focus-task-meta">
                   <span className="focus-source-tag capitalize">
                     {currentTask.source} · #{currentTask.kind}
@@ -210,34 +224,34 @@ export default function FocusModeModal({ isOpen, onClose, items }: FocusModeModa
                     <span>Deadline: {currentTask.due}</span>
                   </div>
                 )}
-              </div>
+              </section>
 
-              {/* Minimalist Glass Timer */}
-              <div className="focus-timer-section">
+              {/* iPhone Glass Circular Countdown Timer */}
+              <section className="focus-timer-island">
                 <div className="timer-ring-container">
-                  <svg className="timer-svg" width="240" height="240" viewBox="0 0 240 240">
+                  <svg className="timer-svg" width="260" height="260" viewBox="0 0 260 260">
                     <defs>
-                      <linearGradient id="timerGold" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#fde68a" />
+                      <linearGradient id="timerMirrorGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#fef08a" />
                         <stop offset="50%" stopColor="#f59e0b" />
-                        <stop offset="100%" stopColor="#b45309" />
+                        <stop offset="100%" stopColor="#d97706" />
                       </linearGradient>
                     </defs>
                     {/* Background Track */}
                     <circle
                       className="timer-track"
-                      cx="120"
-                      cy="120"
+                      cx="130"
+                      cy="130"
                       r={radius}
-                      strokeWidth="6"
+                      strokeWidth="7"
                     />
                     {/* Progress Circle */}
                     <circle
                       className="timer-progress"
-                      cx="120"
-                      cy="120"
+                      cx="130"
+                      cy="130"
                       r={radius}
-                      strokeWidth="7"
+                      strokeWidth="8"
                       strokeDasharray={circumference}
                       strokeDashoffset={strokeDashoffset}
                     />
@@ -315,8 +329,8 @@ export default function FocusModeModal({ isOpen, onClose, items }: FocusModeModa
                     90m Flow State
                   </button>
                 </div>
-              </div>
-            </>
+              </section>
+            </div>
           ) : (
             <div className="focus-empty-card">
               <h2>You are in clear horizon!</h2>
@@ -326,82 +340,93 @@ export default function FocusModeModal({ isOpen, onClose, items }: FocusModeModa
               </button>
             </div>
           )}
-        </div>
+        </main>
 
-        {/* Floating Spotify Audio Bar */}
-        <div className="focus-spotify-bar">
-          <div className="spotify-bar-top">
-            <div className="spotify-title-group">
-              <span className="spotify-icon-brand">🎧</span>
-              <span className="spotify-bar-heading">Focus Audio (Spotify)</span>
-              <span className="spotify-status-badge">Ambient & Flow</span>
-            </div>
+        {/* Floating Glass Spotify Audio Dock */}
+        <footer className="focus-dock-island">
+          <div className="spotify-dock-bar">
+            <div className="spotify-dock-header">
+              <div className="spotify-title-group">
+                <span className="spotify-icon-brand">🎧</span>
+                <span className="spotify-bar-heading">Focus Audio (Spotify)</span>
+                <span className="spotify-status-badge">Ambient & Flow</span>
+              </div>
 
-            <div className="spotify-quick-buttons">
-              {SPOTIFY_PLAYLISTS.map((pl) => (
+              <div className="spotify-quick-buttons">
+                {SPOTIFY_PLAYLISTS.map((pl) => (
+                  <button
+                    key={pl.id}
+                    className={`spotify-preset-btn ${
+                      !customEmbedUrl && selectedPlaylist === pl.id ? "active" : ""
+                    }`}
+                    onClick={() => {
+                      setCustomEmbedUrl(null);
+                      setSelectedPlaylist(pl.id);
+                    }}
+                    title={pl.desc}
+                  >
+                    {pl.name}
+                  </button>
+                ))}
+
                 <button
-                  key={pl.id}
-                  className={`spotify-preset-btn ${
-                    !customEmbedUrl && selectedPlaylist === pl.id ? "active" : ""
-                  }`}
-                  onClick={() => {
-                    setCustomEmbedUrl(null);
-                    setSelectedPlaylist(pl.id);
-                  }}
-                  title={pl.desc}
+                  className={`spotify-custom-toggle-btn ${showCustomInput ? "active" : ""}`}
+                  onClick={() => setShowCustomInput(!showCustomInput)}
                 >
-                  {pl.name}
+                  + Custom Link
                 </button>
-              ))}
 
-              <button
-                className={`spotify-custom-toggle-btn ${showCustomInput ? "active" : ""}`}
-                onClick={() => setShowCustomInput(!showCustomInput)}
-              >
-                + Custom Link
-              </button>
+                <button
+                  className="spotify-collapse-btn"
+                  onClick={() => setIsExpandedPlayer(!isExpandedPlayer)}
+                  title="Toggle player size"
+                >
+                  {isExpandedPlayer ? "Compact" : "Expand"}
+                </button>
 
-              <button
-                className="spotify-collapse-btn"
-                onClick={() => setShowSpotify(!showSpotify)}
-              >
-                {showSpotify ? "Hide Player" : "Show Player"}
-              </button>
+                <button
+                  className="spotify-collapse-btn"
+                  onClick={() => setShowSpotify(!showSpotify)}
+                >
+                  {showSpotify ? "Hide Player" : "Show Player"}
+                </button>
+              </div>
             </div>
+
+            {/* Custom Spotify URL Input Dialog */}
+            {showCustomInput && (
+              <form className="spotify-custom-form" onSubmit={handleApplyCustomSpotify}>
+                <input
+                  type="text"
+                  placeholder="Paste your Spotify playlist or album URL (e.g. https://open.spotify.com/playlist/...)"
+                  value={customLink}
+                  onChange={(e) => setCustomLink(e.target.value)}
+                  className="spotify-url-input"
+                  autoFocus
+                />
+                <button type="submit" className="btn btn-primary small">
+                  Load Music
+                </button>
+              </form>
+            )}
+
+            {/* Embedded Spotify IFrame */}
+            {showSpotify && (
+              <div className="spotify-embed-container">
+                <iframe
+                  title="Kairo Spotify Focus Stream"
+                  src={activeEmbedSrc}
+                  width="100%"
+                  height={isExpandedPlayer ? "152" : "80"}
+                  frameBorder="0"
+                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                  loading="lazy"
+                  style={{ borderRadius: "14px", border: "none" }}
+                />
+              </div>
+            )}
           </div>
-
-          {/* Custom Spotify URL Input Dialog */}
-          {showCustomInput && (
-            <form className="spotify-custom-form" onSubmit={handleApplyCustomSpotify}>
-              <input
-                type="text"
-                placeholder="Paste your Spotify playlist or album URL (e.g. https://open.spotify.com/playlist/...)"
-                value={customLink}
-                onChange={(e) => setCustomLink(e.target.value)}
-                className="spotify-url-input"
-              />
-              <button type="submit" className="btn btn-primary small">
-                Load Music
-              </button>
-            </form>
-          )}
-
-          {/* Embedded Spotify IFrame */}
-          {showSpotify && (
-            <div className="spotify-embed-container">
-              <iframe
-                title="Kairo Spotify Focus Stream"
-                src={activeEmbedSrc}
-                width="100%"
-                height="80"
-                frameBorder="0"
-                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                loading="lazy"
-                style={{ borderRadius: "12px", border: "none" }}
-              />
-            </div>
-          )}
-        </div>
+        </footer>
       </div>
     </div>
   );
