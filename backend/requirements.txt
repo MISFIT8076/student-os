@@ -1,35 +1,35 @@
 # Core web framework
-fastapi==0.115.6
-uvicorn[standard]==0.34.0
-pydantic==2.10.4
-pydantic-settings==2.7.0
-python-dotenv==1.0.1
+fastapi>=0.115.6
+uvicorn[standard]>=0.34.0
+pydantic>=2.10.4
+pydantic-settings>=2.7.0
+python-dotenv>=1.0.1
 
 # MCP (Model Context Protocol) SDK — client + FastMCP servers
-mcp==1.2.0
+mcp>=1.2.0
 
 # HTTP client for API-backed MCP servers (GitHub, Google, Codeforces)
-httpx==0.28.1
+httpx>=0.28.1
 
 # Google OAuth for the Gmail + Calendar + Classroom MCP servers
-google-auth==2.37.0
-google-auth-oauthlib==1.2.1
+google-auth>=2.37.0
+google-auth-oauthlib>=1.2.1
 
 # Caching (optional — omit to use the built-in in-memory cache)
-redis==5.2.1
+redis>=5.2.1
 
 # Persistence (SQLite works out of the box; Postgres needs a driver too)
-sqlalchemy==2.0.36
+sqlalchemy>=2.0.36
 
 # Learning-to-rank model + RAG retrieval (feature math, training, TF-IDF)
-numpy==2.2.6
+numpy>=2.2.6
 
 # Security: token vault (encryption at rest)
-cryptography==48.0.0
+cryptography>=48.0.0
 
 # LLM (optional — only used when ANTHROPIC_API_KEY is set)
-anthropic==0.42.0
+anthropic>=0.42.0
 
 # Testing
-pytest==8.3.4
-pytest-asyncio==0.25.0
+pytest>=8.3.4
+pytest-asyncio>=0.25.0

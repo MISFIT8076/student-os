@@ -1,22 +1,38 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import KairoLogo from "@/components/KairoLogo";
+import ThemeToggle from "@/components/ThemeToggle";
 import { getProgress } from "@/lib/api";
 import type { Progress } from "@/lib/types";
 
-function Bars({ data }: { data: Record<string, number> }) {
+function Bars({
+  data,
+  fillColor = "var(--gold)",
+}: {
+  data: Record<string, number>;
+  fillColor?: string;
+}) {
   const entries = Object.entries(data);
   const max = Math.max(1, ...entries.map(([, v]) => v));
-  if (entries.length === 0) return <p className="muted small">No data yet.</p>;
+  if (entries.length === 0)
+    return <p className="muted small">No historical data recorded yet.</p>;
+
   return (
-    <div className="bars">
+    <div className="bars-list">
       {entries.map(([label, value]) => (
         <div key={label} className="bar-row">
-          <span className="bar-label">{label}</span>
-          <span className="bar-track">
-            <span className="bar-fill" style={{ width: `${(value / max) * 100}%` }} />
-          </span>
-          <span className="bar-val">{value}</span>
+          <span className="bar-label">{label.replace(/_/g, " ")}</span>
+          <div className="bar-track">
+            <div
+              className="bar-fill"
+              style={{
+                width: `${(value / max) * 100}%`,
+                background: fillColor,
+              }}
+            />
+          </div>
+          <span className="bar-val font-mono">{value}</span>
         </div>
       ))}
     </div>
@@ -41,52 +57,98 @@ export default function ProgressPage() {
 
   return (
     <main className="wrap">
-      <header className="topbar">
-        <div className="brand">
-          <span className="logo">◎</span>
-          <div>
-            <h1>Your progress</h1>
-            <p className="muted small">Habits and follow-through over time</p>
-          </div>
+      {/* Top Bar */}
+      <header className="kairo-topbar">
+        <div className="topbar-left">
+          <KairoLogo size="md" />
+        </div>
+
+        <div className="topbar-right">
+          <a className="nav-btn-link" href="/">
+            <span className="nav-arrow">←</span>
+            <span>Return to Today</span>
+          </a>
+          <ThemeToggle />
         </div>
       </header>
 
-      {error && <div className="alert">Could not load progress: {error}</div>}
+      {/* Progress Header Hero */}
+      <div className="progress-hero-card">
+        <h1 className="progress-title">Academic Momentum & Habits</h1>
+        <p className="muted">
+          Tracking the rhythm of execution across your semester. Kairos honors consistency.
+        </p>
+      </div>
+
+      {error && (
+        <div className="alert" style={{ marginBottom: "20px" }}>
+          Could not load progress records: {error}
+        </div>
+      )}
 
       {data && (
-        <div className="grid">
-          <section className="panel">
-            <div className="panel-head"><h2>At a glance</h2></div>
-            <div className="stat-row">
-              <div className="stat">
-                <div className="stat-num">{data.done_streak_days}</div>
-                <div className="muted small">day done-streak</div>
+        <div className="progress-grid">
+          {/* Key Metric Pillars */}
+          <section className="panel progress-stat-panel">
+            <h2 className="panel-title">
+              <span>Pillars of Momentum</span>
+            </h2>
+            <div className="pillar-stats-grid">
+              <div className="pillar-card">
+                <span className="pillar-icon">🔥</span>
+                <div className="pillar-number font-mono text-gold">
+                  {data.done_streak_days}
+                </div>
+                <div className="pillar-label">Day Done-Streak</div>
+                <div className="pillar-sub small muted">Consecutive active days</div>
               </div>
-              <div className="stat">
-                <div className="stat-num">{data.total_actions}</div>
-                <div className="muted small">actions taken</div>
+
+              <div className="pillar-card">
+                <span className="pillar-icon">⚡</span>
+                <div className="pillar-number font-mono text-accent">
+                  {data.total_actions}
+                </div>
+                <div className="pillar-label">Decisive Actions</div>
+                <div className="pillar-sub small muted">Tasks resolved</div>
               </div>
-              <div className="stat">
-                <div className="stat-num">{data.items_shown}</div>
-                <div className="muted small">items surfaced</div>
+
+              <div className="pillar-card">
+                <span className="pillar-icon">👁️</span>
+                <div className="pillar-number font-mono text-high">
+                  {data.items_shown}
+                </div>
+                <div className="pillar-label">Signals Surfaced</div>
+                <div className="pillar-sub small muted">Cross-platform items</div>
               </div>
             </div>
           </section>
 
+          {/* Action Types Distribution */}
           <section className="panel">
-            <div className="panel-head"><h2>Actions</h2></div>
-            <Bars data={data.actions} />
+            <h2 className="panel-title">Action Types Executed</h2>
+            <p className="muted small" style={{ marginBottom: "16px" }}>
+              Distribution of resolved tasks, commits, PR approvals, and submissions
+            </p>
+            <Bars data={data.actions} fillColor="var(--accent)" />
           </section>
 
+          {/* Opportunity & Application Funnel */}
           <section className="panel">
-            <div className="panel-head"><h2>Application funnel</h2></div>
-            <Bars data={data.application_funnel} />
+            <h2 className="panel-title">Opportunity Pipeline Funnel</h2>
+            <p className="muted small" style={{ marginBottom: "16px" }}>
+              Active tracking for internships, scholarships, and competitive contests
+            </p>
+            <Bars data={data.application_funnel} fillColor="var(--gold)" />
           </section>
         </div>
       )}
 
-      <footer className="foot muted small">
-        <a href="/">← back to today</a>
+      <footer className="kairo-footer" style={{ marginTop: "40px" }}>
+        <div className="footer-meta-row">
+          <a href="/">← Return to Today&apos;s Focus</a>
+          <span className="footer-sep">·</span>
+          <span>Kairo Habit Engine</span>
+        </div>
       </footer>
     </main>
   );
