@@ -15,7 +15,7 @@ from app.orchestrator.agent import build_briefing
 async def _main() -> None:
     b = await build_briefing()
     print("\n" + "=" * 66)
-    print(f"  STUDENT OS — {b.headline}")
+    print(f"  KAIRO (καιρός) — {b.headline}")
     print("=" * 66)
     print(b.summary)
     print(f"\nSources: {', '.join(b.sources_used)}   |   LLM: {b.llm_used}")

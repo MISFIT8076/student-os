@@ -38,3 +38,45 @@ export interface Progress {
   active_days: number;
   application_funnel: Record<string, number>;
 }
+
+export interface ScheduleBlock {
+  start: string;
+  end: string;
+  minutes: number;
+  title: string;
+  source: string;
+  kind: string;
+  due?: string | null;
+  priority: string;
+}
+
+export interface ScheduleOverflow {
+  title: string;
+  source: string;
+  kind: string;
+  due?: string | null;
+  minutes: number;
+}
+
+export interface DaySchedule {
+  date: string;
+  blocks: ScheduleBlock[];
+  overflow: ScheduleOverflow[];
+  available_minutes: number;
+  demand_minutes: number;
+  scheduled_minutes: number;
+  overcommitted: boolean;
+  advice: string;
+}
+
+export interface OpportunityItem {
+  key: string;
+  type: "contest" | "internship" | "scholarship" | "project" | string;
+  title: string;
+  detail: string;
+  source: string;
+  kind: string;
+  due?: string | null;
+  url?: string | null;
+  status: "new" | "saved" | "applied" | "interviewing" | "accepted" | "rejected" | string;
+}

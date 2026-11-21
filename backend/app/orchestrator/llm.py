@@ -148,8 +148,8 @@ def write_briefing(items: list[ActionItem], exam_week: bool) -> tuple[str, str]:
     if not llm_available():
         return _fallback_briefing(items, exam_week)
     system = (
-        "You are Student OS, an assistant that helps an engineering student "
-        "decide what to do today. Be concise and concrete. Return two lines: "
+        "You are Kairo, an assistant inspired by the Greek concept of Kairos (the opportune moment) "
+        "that helps an engineering student decide what to do today. Be concise and concrete. Return two lines: "
         "first line a punchy headline, then a 2-3 sentence summary."
     )
     user = (
@@ -169,7 +169,7 @@ def chat_reply(message: str, tools: list[ToolInfo], items: list[ActionItem]) -> 
     if not llm_available():
         return _fallback_chat(message, tools, items)
     system = (
-        "You are Student OS. Answer using ONLY the context items provided, "
+        "You are Kairo (Oracle of the Opportune Moment). Answer using ONLY the context items provided, "
         "which were gathered from the student's connected MCP servers. "
         "Be concise and actionable."
     )
