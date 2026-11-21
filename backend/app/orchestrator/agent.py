@@ -23,30 +23,42 @@ def _blend_custom_and_filter_done(
     items: list[ActionItem], sources: list[str]
 ) -> list[ActionItem]:
     """Helper to merge active user-created custom tasks and filter out completed tasks."""
-    custom_tasks = store.list_custom_tasks(include_done=False)
-    for t in custom_tasks:
-        try:
-            p = Priority(t["priority"].lower())
-        except Exception:
-            p = Priority.medium
+    try:
+        tasks = []
+        if hasattr(store, "get_active_custom_tasks"):
+            tasks = store.get_active_custom_tasks()
+        elif hasattr(store, "list_custom_tasks"):
+            tasks = store.list_custom_tasks(include_done=False)
 
-        items.append(
-            ActionItem(
-                source=t["source"],
-                kind=t["kind"],
-                title=t["title"],
-                detail=t["detail"] or "",
-                url=t["url"],
-                due=t["due"],
-                priority=p,
-                raw={"estimated_minutes": t.get("estimated_minutes")},
+        for t in tasks:
+            try:
+                p = Priority(t["priority"].lower())
+            except Exception:
+                p = Priority.medium
+
+            items.append(
+                ActionItem(
+                    source=t.get("source", "personal"),
+                    kind=t.get("kind", "task"),
+                    title=t.get("title", "(untitled)"),
+                    detail=t.get("detail") or "",
+                    url=t.get("url"),
+                    due=t.get("due"),
+                    priority=p,
+                    raw={"estimated_minutes": t.get("estimated_minutes")},
+                )
             )
-        )
-        if "personal" not in sources:
-            sources.append("personal")
+            if "personal" not in sources:
+                sources.append("personal")
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("Failed to blend custom tasks: %s", exc)
 
-    done_keys = store.get_done_item_keys()
-    return [it for it in items if store.item_key(it.source, it.title, it.due) not in done_keys]
+    try:
+        done_keys = store.get_done_item_keys()
+        return [it for it in items if store.item_key(it.source, it.title, it.due) not in done_keys]
+    except Exception:
+        return items
 
 
 async def build_briefing(force_refresh: bool = False, user_id: int | None = None) -> Briefing:
