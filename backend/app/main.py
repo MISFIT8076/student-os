@@ -1,4 +1,4 @@
-"""Student OS backend entrypoint.
+"""Kairo backend entrypoint.
 
 Run:  uvicorn app.main:app --reload   (from the backend/ directory)
 Docs: http://127.0.0.1:8000/docs
@@ -23,8 +23,8 @@ from app.routers import (
 settings = get_settings()
 
 app = FastAPI(
-    title="Student OS",
-    description="An MCP-powered AI coordination layer for student life.",
+    title="Kairo",
+    description="An MCP-powered, learning-based AI coordination layer for student life.",
     version="0.18.0",
 )
 
@@ -58,6 +58,7 @@ def health() -> dict:
 @app.get("/", tags=["meta"])
 def root() -> dict:
     return {
-        "app": "Student OS",
-        "try": ["/briefing", "/tools", "POST /chat", "/docs"],
+        "app": "Kairo",
+        "description": "The Opportune Moment (καιρός) · AI coordination layer",
+        "try": ["/briefing", "/schedule", "/opportunities", "/tools", "POST /chat", "/docs"],
     }

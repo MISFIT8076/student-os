@@ -1,4 +1,4 @@
-import type { Briefing, ChatResponse, Progress } from "./types";
+import type { Briefing, ChatResponse, Progress, DaySchedule, OpportunityItem } from "./types";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE ?? "http://127.0.0.1:8000";
@@ -28,6 +28,28 @@ export function sendChat(message: string): Promise<ChatResponse> {
 
 export function getProgress(): Promise<Progress> {
   return json<Progress>("/progress");
+}
+
+export function getSchedule(): Promise<DaySchedule> {
+  return json<DaySchedule>("/schedule");
+}
+
+export function getOpportunities(): Promise<OpportunityItem[]> {
+  return json<OpportunityItem[]>("/opportunities");
+}
+
+export function updateOpportunityStatus(req: {
+  source: string;
+  title: string;
+  due?: string | null;
+  kind: string;
+  otype: string;
+  status: string;
+}): Promise<{ ok: boolean }> {
+  return json<{ ok: boolean }>("/opportunities/status", {
+    method: "POST",
+    body: JSON.stringify(req),
+  });
 }
 
 export { API_BASE };

@@ -184,29 +184,26 @@ async def _gather_raw() -> tuple[list[ActionItem], list[str], list[ToolInfo]]:
             all_tools.extend(tools)
             sources.append(spec["name"])
         except Exception as e:
-            with open(r"c:\Users\aggar\Desktop\student-os\debug_backend.txt", "a", encoding="utf-8") as f:
-                f.write(f"ERR in _gather_raw for {spec.get('name')}: {type(e).__name__}: {e}\n")
+            import logging
+            logging.getLogger(__name__).warning("ERR in _gather_raw for %s: %s: %s", spec.get('name'), type(e).__name__, e)
             continue
-    with open(r"c:\Users\aggar\Desktop\student-os\debug_backend.txt", "a", encoding="utf-8") as f:
-        f.write(f"_gather_raw complete: items={len(all_items)}, sources={sources}\n")
     return all_items, sources, all_tools
 
 
 def _gather_raw_in_proactor_thread() -> tuple[list[ActionItem], list[str], list[ToolInfo]]:
     """Run gathering in a thread with a ProactorEventLoop (required on Windows with uvicorn --reload)."""
     import asyncio
-    with open(r"c:\Users\aggar\Desktop\student-os\debug_backend.txt", "a", encoding="utf-8") as f:
-        f.write("Entered _gather_raw_in_proactor_thread\n")
+    import logging
+    _log = logging.getLogger(__name__)
+    _log.debug("Entered _gather_raw_in_proactor_thread")
     loop = asyncio.WindowsProactorEventLoopPolicy().new_event_loop()
     asyncio.set_event_loop(loop)
     try:
         res = loop.run_until_complete(_gather_raw())
-        with open(r"c:\Users\aggar\Desktop\student-os\debug_backend.txt", "a", encoding="utf-8") as f:
-            f.write(f"_gather_raw_in_proactor_thread finished with {len(res[0])} items\n")
+        _log.debug("_gather_raw_in_proactor_thread finished with %d items", len(res[0]))
         return res
     except Exception as e:
-        with open(r"c:\Users\aggar\Desktop\student-os\debug_backend.txt", "a", encoding="utf-8") as f:
-            f.write(f"ERR in _gather_raw_in_proactor_thread: {type(e).__name__}: {e}\n")
+        _log.error("ERR in _gather_raw_in_proactor_thread: %s: %s", type(e).__name__, e)
         raise
     finally:
         loop.close()
