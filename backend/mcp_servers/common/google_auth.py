@@ -77,9 +77,10 @@ def login() -> None:
     from google_auth_oauthlib.flow import InstalledAppFlow
 
     flow = InstalledAppFlow.from_client_config(_client_config(), SCOPES)
-    creds = flow.run_local_server(port=0)
+    print("\nStarting local server for Google consent...", flush=True)
+    creds = flow.run_local_server(port=8080, open_browser=True, prompt="consent", access_type="offline")
     TOKEN_PATH.write_text(creds.to_json())
-    print(f"✅ Saved Google token to {TOKEN_PATH}")
+    print(f"✅ Saved Google token to {TOKEN_PATH}", flush=True)
 
 
 def has_credentials() -> bool:

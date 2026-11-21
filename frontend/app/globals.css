@@ -2412,3 +2412,891 @@ h1, h2, h3, h4, .font-greek {
   transform: translateY(-1px);
 }
 
+/* ==========================================================================
+   SUPER FOCUS MODE (KAIROS SANCTUARY)
+   Fullscreen iPhone Glass Mirror Chamber & Integrated Audio Player
+   ========================================================================== */
+
+/* Topbar Super Focus Button */
+.super-focus-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(56, 189, 248, 0.08) 100%);
+  border: 1px solid var(--border-gold);
+  color: var(--gold-light);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 13px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="light"] .super-focus-btn {
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.1) 0%, rgba(2, 132, 199, 0.06) 100%);
+  color: #92400e;
+  border-color: rgba(217, 119, 6, 0.4);
+  box-shadow: 0 0 10px rgba(217, 119, 6, 0.12);
+}
+
+.super-focus-btn:hover {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(56, 189, 248, 0.15) 100%);
+  border-color: var(--gold-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.35);
+  color: #ffffff;
+}
+
+[data-theme="light"] .super-focus-btn:hover {
+  color: #78350f;
+  border-color: #b45309;
+}
+
+.focus-btn-sparkle {
+  color: var(--gold-primary);
+  font-size: 14px;
+  animation: pulseGold 2.5s infinite ease-in-out;
+}
+
+.focus-btn-label {
+  letter-spacing: 0.3px;
+}
+
+.focus-btn-shortcut {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--text-secondary);
+  font-family: monospace;
+}
+
+[data-theme="light"] .focus-btn-shortcut {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.15);
+  color: #78350f;
+}
+
+/* ==========================================================================
+   FULLSCREEN IPHONE GLASS MIRROR SANCTUARY
+   ========================================================================== */
+
+.focus-fullscreen-sanctuary {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99999;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: focusFadeIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  
+  /* Dark Mode: Aegean Obsidian Smoked Mirror */
+  background: rgba(6, 10, 20, 0.72);
+  backdrop-filter: blur(50px) saturate(220%) contrast(104%);
+  -webkit-backdrop-filter: blur(50px) saturate(220%) contrast(104%);
+}
+
+[data-theme="light"] .focus-fullscreen-sanctuary {
+  /* Light Mode: Parian Marble Frosted Crystal Mirror */
+  background: rgba(244, 247, 252, 0.65);
+  backdrop-filter: blur(50px) saturate(200%) contrast(104%);
+  -webkit-backdrop-filter: blur(50px) saturate(200%) contrast(104%);
+}
+
+@keyframes focusFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* iPhone Specular Glass Mirror Sheen Overlay */
+.focus-mirror-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.07) 0%,
+    rgba(255, 255, 255, 0.02) 28%,
+    rgba(255, 255, 255, 0) 65%
+  ),
+  radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.04) 0%, transparent 60%);
+  box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="light"] .focus-mirror-sheen {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.15) 30%,
+    rgba(255, 255, 255, 0) 70%
+  ),
+  radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.35) 0%, transparent 55%);
+  box-shadow: inset 0 0 90px rgba(255, 255, 255, 0.65);
+}
+
+/* Dynamic Animated Ambient Mesh Orbs */
+.focus-mesh-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+  opacity: 0.65;
+  z-index: 1;
+}
+
+.focus-mesh-orb.orb-gold {
+  width: 55vw;
+  height: 55vw;
+  top: -15vw;
+  left: 10vw;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.35) 0%, rgba(217, 119, 6, 0.14) 50%, transparent 70%);
+  animation: floatOrbGold 20s ease-in-out infinite alternate;
+}
+
+.focus-mesh-orb.orb-blue {
+  width: 55vw;
+  height: 55vw;
+  bottom: -15vw;
+  right: 5vw;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.3) 0%, rgba(37, 99, 235, 0.14) 50%, transparent 70%);
+  animation: floatOrbBlue 24s ease-in-out infinite alternate;
+}
+
+.focus-mesh-orb.orb-violet {
+  width: 45vw;
+  height: 45vw;
+  top: 35vh;
+  left: -10vw;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.24) 0%, rgba(139, 92, 246, 0.08) 50%, transparent 70%);
+  animation: floatOrbViolet 22s ease-in-out infinite alternate;
+}
+
+[data-theme="light"] .focus-mesh-orb.orb-gold {
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.08) 50%, transparent 70%);
+}
+[data-theme="light"] .focus-mesh-orb.orb-blue {
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.22) 0%, rgba(2, 132, 199, 0.08) 50%, transparent 70%);
+}
+[data-theme="light"] .focus-mesh-orb.orb-violet {
+  background: radial-gradient(circle, rgba(244, 114, 182, 0.18) 0%, rgba(236, 72, 153, 0.06) 50%, transparent 70%);
+}
+
+@keyframes floatOrbGold {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(4vw, 3vh) scale(1.08); }
+  100% { transform: translate(-3vw, 5vh) scale(0.96); }
+}
+
+@keyframes floatOrbBlue {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-5vw, -4vh) scale(1.06); }
+  100% { transform: translate(3vw, -2vh) scale(0.94); }
+}
+
+@keyframes floatOrbViolet {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(3vw, -4vh) scale(1.05); }
+  100% { transform: translate(-4vw, 2vh) scale(0.95); }
+}
+
+/* Fullscreen Chamber Flex Container */
+.focus-chamber-full {
+  position: relative;
+  z-index: 5;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 18px 36px 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+/* Top Floating Glass Header */
+.focus-chamber-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 24px;
+  border-radius: 9999px;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  
+  /* iPhone Glass Pill */
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%), rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 12px 30px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+[data-theme="light"] .focus-chamber-header {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.5) 100%), rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: inset 0 1.5px 1.5px rgba(255, 255, 255, 1), 0 10px 25px rgba(100, 116, 139, 0.1);
+}
+
+.focus-brand-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "Cinzel", serif;
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  color: var(--gold-primary);
+  font-weight: 700;
+}
+
+.focus-sparkle {
+  color: var(--gold-primary);
+  font-size: 15px;
+}
+
+.focus-center-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.focus-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+}
+
+.focus-status-motto {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+}
+
+.focus-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.focus-exit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 13px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="light"] .focus-exit-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: var(--text-primary);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8);
+}
+
+.focus-exit-btn:hover {
+  background: rgba(244, 63, 94, 0.16);
+  border-color: rgba(244, 63, 94, 0.4);
+  color: #ff4d6d;
+}
+
+.esc-key {
+  font-size: 10px;
+  font-family: monospace;
+  padding: 1px 5px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="light"] .esc-key {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Central Monastic Core */
+.focus-central-core {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 0;
+  width: 100%;
+}
+
+.focus-core-layout {
+  width: 100%;
+  max-width: 860px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+}
+
+/* Task Glass Mirror Island */
+.focus-task-island {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.02) 100%), rgba(15, 23, 42, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 24px;
+  padding: 22px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.3), inset 0 0 25px rgba(255, 255, 255, 0.02), 0 24px 60px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+}
+
+[data-theme="light"] .focus-task-island {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(240, 245, 255, 0.55) 100%), rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 1), inset 0 0 25px rgba(255, 255, 255, 0.5), 0 20px 50px rgba(100, 116, 139, 0.12);
+}
+
+.focus-task-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.focus-source-tag {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+}
+
+.focus-task-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  margin-left: 6px;
+}
+
+[data-theme="light"] .focus-task-stepper {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.stepper-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 1px 4px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.stepper-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+}
+
+.stepper-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.stepper-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+.focus-task-title {
+  font-family: "Cinzel", serif;
+  font-size: 25px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.35;
+  margin: 2px 0 0;
+  max-width: 720px;
+  letter-spacing: 0.4px;
+}
+
+.focus-task-detail {
+  font-size: 14.5px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin: 0;
+  max-width: 660px;
+}
+
+.focus-task-due {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold-primary);
+  background: rgba(245, 158, 11, 0.1);
+  padding: 4px 14px;
+  border-radius: 9999px;
+  border: 1px solid var(--border-gold-subtle);
+  margin-top: 4px;
+}
+
+/* iPhone Glass Circular Countdown Timer */
+.focus-timer-island {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+}
+
+.timer-ring-container {
+  position: relative;
+  width: 260px;
+  height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timer-svg {
+  transform: rotate(-90deg);
+  overflow: visible;
+}
+
+.timer-track {
+  fill: none;
+  stroke: rgba(148, 163, 184, 0.14);
+}
+
+[data-theme="light"] .timer-track {
+  stroke: rgba(148, 163, 184, 0.25);
+}
+
+.timer-progress {
+  fill: none;
+  stroke: url(#timerMirrorGold);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.85s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 0 14px rgba(245, 158, 11, 0.5));
+}
+
+.timer-center-info {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.timer-digits {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 2px;
+  line-height: 1;
+  transition: all 0.3s ease;
+}
+
+.timer-digits.active-glow {
+  color: var(--gold-light);
+  text-shadow: 0 0 30px rgba(245, 158, 11, 0.65);
+}
+
+[data-theme="light"] .timer-digits.active-glow {
+  color: #92400e;
+  text-shadow: 0 0 25px rgba(217, 119, 6, 0.35);
+}
+
+.timer-phase-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
+/* Timer Control Buttons */
+.timer-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.focus-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--gold-gradient);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #070b14;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 700;
+  padding: 11px 26px;
+  border-radius: 9999px;
+  cursor: pointer;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5), 0 8px 24px rgba(245, 158, 11, 0.4);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.focus-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.6), 0 12px 30px rgba(245, 158, 11, 0.55);
+}
+
+.focus-btn-primary.is-running {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #ffffff;
+}
+
+.focus-btn-secondary,
+.focus-btn-complete {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 11px 20px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="light"] .focus-btn-secondary,
+[data-theme="light"] .focus-btn-complete {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
+  box-shadow: inset 0 1.5px 1px rgba(255, 255, 255, 1), 0 4px 14px rgba(100, 116, 139, 0.1);
+}
+
+.focus-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.focus-btn-complete:hover {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #10b981;
+}
+
+/* Presets Row */
+.timer-presets-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.presets-label {
+  font-size: 12px;
+}
+
+.preset-chip {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 14px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .preset-chip {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(255, 255, 255, 0.85);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8);
+}
+
+.preset-chip:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--text-primary);
+}
+
+.preset-chip.active {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: var(--gold-primary);
+  color: var(--gold-light);
+  font-weight: 600;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.25);
+}
+
+[data-theme="light"] .preset-chip.active {
+  color: #92400e;
+  border-color: #b45309;
+}
+
+/* Empty State */
+.focus-empty-card {
+  padding: 40px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.focus-empty-card h2 {
+  font-family: "Cinzel", serif;
+  color: var(--gold-primary);
+}
+
+/* Floating Glass Spotify Audio Dock */
+.focus-dock-island {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.spotify-dock-bar {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%), rgba(15, 23, 42, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 22px;
+  padding: 14px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.25), 0 16px 45px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="light"] .spotify-dock-bar {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(245, 248, 255, 0.6) 100%), rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 1.5px 1.5px rgba(255, 255, 255, 1), 0 14px 38px rgba(100, 116, 139, 0.12);
+}
+
+.spotify-dock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.spotify-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spotify-icon-brand {
+  font-size: 16px;
+}
+
+.spotify-bar-heading {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.3px;
+}
+
+.spotify-status-badge {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #10b981;
+  border-radius: 9999px;
+}
+
+.spotify-quick-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.spotify-preset-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 4px 11px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .spotify-preset-btn {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(255, 255, 255, 0.85);
+  color: var(--text-secondary);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8);
+}
+
+.spotify-preset-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--text-primary);
+}
+
+.spotify-preset-btn.active {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: #10b981;
+  color: #34d399;
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.28);
+}
+
+[data-theme="light"] .spotify-preset-btn.active {
+  color: #047857;
+  border-color: #10b981;
+}
+
+.spotify-custom-toggle-btn,
+.spotify-collapse-btn {
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 9px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+[data-theme="light"] .spotify-custom-toggle-btn,
+[data-theme="light"] .spotify-collapse-btn {
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.spotify-custom-toggle-btn:hover,
+.spotify-collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.spotify-custom-toggle-btn.active {
+  border-style: solid;
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(56, 189, 248, 0.12);
+}
+
+/* Custom Spotify Input Form */
+.spotify-custom-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.spotify-url-input {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border-medium);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  color: var(--text-primary);
+  font-family: inherit;
+  outline: none;
+}
+
+.spotify-url-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.spotify-embed-container {
+  overflow: hidden;
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  line-height: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"] .spotify-embed-container {
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 6px 18px rgba(100, 116, 139, 0.1);
+}
+
+/* Responsive Focus Chamber */
+@media (max-width: 768px) {
+  .focus-chamber-full {
+    padding: 14px 16px;
+  }
+  .focus-chamber-header {
+    padding: 8px 16px;
+  }
+  .focus-center-status {
+    display: none;
+  }
+  .focus-task-island {
+    padding: 18px 20px;
+    border-radius: 18px;
+  }
+  .focus-task-title {
+    font-size: 20px;
+  }
+  .timer-ring-container {
+    width: 210px;
+    height: 210px;
+  }
+  .timer-svg {
+    width: 210px;
+    height: 210px;
+  }
+  .timer-digits {
+    font-size: 38px;
+  }
+}

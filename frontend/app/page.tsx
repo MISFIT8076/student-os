@@ -7,6 +7,7 @@ import KairoLogo from "@/components/KairoLogo";
 import ThemeToggle from "@/components/ThemeToggle";
 import AuthModal from "@/components/AuthModal";
 import IntegrationsModal from "@/components/IntegrationsModal";
+import FocusModeModal from "@/components/FocusModeModal";
 import { getBriefing, getStoredUser, clearAuth, getConnections } from "@/lib/api";
 import type { Briefing, User } from "@/lib/types";
 
@@ -15,6 +16,23 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentDateStr, setCurrentDateStr] = useState<string>("");
+  const [isFocusOpen, setIsFocusOpen] = useState(false);
+
+  // Keyboard shortcut: Press 'F' to toggle focus mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      const isInput =
+        activeEl?.tagName === "INPUT" ||
+        activeEl?.tagName === "TEXTAREA" ||
+        (activeEl as HTMLElement)?.isContentEditable;
+      if (e.key.toLowerCase() === "f" && !isInput && !e.metaKey && !e.ctrlKey) {
+        setIsFocusOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Auth & Integrations state
   const [user, setUser] = useState<User | null>(null);
@@ -22,6 +40,15 @@ export default function Home() {
   const [integrationsModalOpen, setIntegrationsModalOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [connectedAppsCount, setConnectedAppsCount] = useState<number>(0);
+
+  const refreshConnectionsCount = useCallback(async () => {
+    try {
+      const conns = await getConnections();
+      setConnectedAppsCount(conns.filter((c) => c.is_connected).length);
+    } catch {
+      // Mock/unauthed fallback
+    }
+  }, []);
 
   useEffect(() => {
     const today = new Date();
@@ -33,16 +60,7 @@ export default function Home() {
     setCurrentDateStr(formatted);
     setUser(getStoredUser());
     refreshConnectionsCount();
-  }, []);
-
-  const refreshConnectionsCount = useCallback(async () => {
-    try {
-      const conns = await getConnections();
-      setConnectedAppsCount(conns.filter((c) => c.is_connected).length);
-    } catch {
-      // Mock/unauthed fallback
-    }
-  }, []);
+  }, [refreshConnectionsCount]);
 
   const load = useCallback(async (refresh = false) => {
     setLoading(true);
@@ -104,6 +122,17 @@ export default function Home() {
             ) : (
               <span className="status-tag pending">Setup</span>
             )}
+          </button>
+
+          {/* Super Focus Mode Chamber Trigger */}
+          <button
+            className="super-focus-btn"
+            onClick={() => setIsFocusOpen(true)}
+            title="Enter Super Focus Sanctuary (Press F)"
+          >
+            <span className="focus-btn-sparkle">✦</span>
+            <span className="focus-btn-label">Super Focus</span>
+            <span className="focus-btn-shortcut">F</span>
           </button>
 
           <a className="nav-btn-link" href="/progress" title="View historical habits and streaks">
@@ -253,6 +282,13 @@ export default function Home() {
           refreshConnectionsCount();
           load(true);
         }}
+      />
+
+      {/* Super Focus Mode Chamber */}
+      <FocusModeModal
+        isOpen={isFocusOpen}
+        onClose={() => setIsFocusOpen(false)}
+        items={briefing?.items ?? []}
       />
     </main>
   );
