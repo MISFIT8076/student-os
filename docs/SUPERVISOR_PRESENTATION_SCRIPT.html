@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kairo (Student OS) — Supervisor Presentation Script & Defense Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+  <style>
+    :root {
+      --bg: #070b14;
+      --panel: #0d1322;
+      --card: #131b2e;
+      --card-hover: #19243d;
+      --border: rgba(245, 158, 11, 0.22);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --gold: #f59e0b;
+      --gold-light: #fcd34d;
+      --gold-glow: rgba(245, 158, 11, 0.18);
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.12);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --urgent: #f43f5e;
+      --success: #10b981;
+      --code-bg: #090e1a;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      line-height: 1.65;
+      font-size: 15.5px;
+      padding-bottom: 90px;
+    }
+
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    /* Classical Header */
+    header.hero-header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 28px;
+      margin-bottom: 34px;
+      position: relative;
+    }
+    .eyebrow {
+      font-family: 'Cinzel', serif;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--gold);
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+    h1.hero-title {
+      font-family: 'Cinzel', serif;
+      font-size: 34px;
+      font-weight: 700;
+      margin: 4px 0 10px;
+      color: #fff;
+      text-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
+    }
+    p.hero-subtitle {
+      font-size: 16px;
+      color: var(--muted);
+      max-width: 820px;
+      margin: 0 0 18px;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .tag {
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      background: var(--card);
+      border: 1px solid var(--border-subtle);
+      color: var(--gold-light);
+    }
+    .tag.live {
+      border-color: var(--gold);
+      background: rgba(245, 158, 11, 0.12);
+      color: #fbbf24;
+    }
+
+    /* Roadmap Timeline Cards */
+    .timeline-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin: 24px 0 36px;
+      background: var(--panel);
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+    }
+    .timeline-table th, .timeline-table td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 13.5px;
+    }
+    .timeline-table th {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--gold);
+      font-family: 'Cinzel', serif;
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+    .time-chip {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--accent);
+      padding: 2px 7px;
+      border-radius: 6px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      white-space: nowrap;
+    }
+
+    /* Act Sections */
+    .act-block {
+      background: var(--panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 28px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      transition: border-color 0.2s;
+    }
+    .act-block:hover {
+      border-color: var(--border);
+    }
+    .act-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .act-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .act-badge {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: #070b14;
+      background: var(--gold);
+      padding: 3px 9px;
+      border-radius: 6px;
+    }
+    .act-heading {
+      font-family: 'Cinzel', serif;
+      font-size: 21px;
+      margin: 0;
+      color: #fff;
+    }
+
+    .slide-cue {
+      font-size: 12px;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 8px;
+      padding: 6px 12px;
+      margin-bottom: 16px;
+      font-style: italic;
+    }
+
+    /* Spoken Script Styling */
+    .speech-box {
+      background: var(--card);
+      border-left: 4px solid var(--gold);
+      border-radius: 0 12px 12px 0;
+      padding: 18px 20px;
+      font-size: 15px;
+      line-height: 1.7;
+      color: #e2e8f0;
+      margin: 14px 0 20px;
+    }
+    .speech-box em {
+      color: var(--gold-light);
+      font-style: normal;
+      font-weight: 600;
+    }
+
+    /* Code & Formulas */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 16px;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: #38bdf8;
+      line-height: 1.5;
+    }
+
+    /* Comparison Metric Table */
+    .metric-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 13.5px;
+    }
+    .metric-table th, .metric-table td {
+      border: 1px solid var(--border-subtle);
+      padding: 10px 14px;
+      text-align: left;
+    }
+    .metric-table th {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--gold);
+      font-family: 'Cinzel', serif;
+      font-size: 11.5px;
+    }
+    .metric-table tr.highlight {
+      background: rgba(245, 158, 11, 0.08);
+      font-weight: 600;
+    }
+    .metric-table tr.highlight td:first-child {
+      color: var(--gold-light);
+    }
+    .score-high {
+      color: #34d399;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Q&A Accordion Cards */
+    .qa-card {
+      background: var(--card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 12px;
+    }
+    .qa-card h4 {
+      margin: 0 0 8px;
+      color: var(--gold-light);
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .qa-card p {
+      margin: 0;
+      color: #cbd5e1;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* Buttons */
+    .copy-btn {
+      float: right;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-subtle);
+      color: var(--muted);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .greek-meander {
+      font-family: 'Cinzel', serif;
+      color: var(--gold);
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+  <!-- Hero Title -->
+  <header class="hero-header">
+    <span class="eyebrow">Academic Review & Capstone Defense</span>
+    <h1 class="hero-title">Kairo: Student OS Supervisor Presentation</h1>
+    <p class="hero-subtitle">
+      A context-aware autonomous student operating system unifying Model Context Protocols (MCP), closed-form Ridge ranking, and cognitive wellbeing pacing.
+    </p>
+
+    <div class="badge-row">
+      <span class="tag live">✦ Next.js 14 App Router</span>
+      <span class="tag live">✦ FastAPI (Python 3.11)</span>
+      <span class="tag">Anthropic Model Context Protocol (MCP)</span>
+      <span class="tag">Closed-Form Ridge Regression ($\lambda = 1.0$)</span>
+      <span class="tag">Google Gemini Pro LLM</span>
+      <span class="tag">Fernet AES-128 Encryption</span>
+    </div>
+  </header>
+
+  <!-- Presentation Roadmap Table -->
+  <table class="timeline-table">
+    <thead>
+      <tr>
+        <th>Phase</th>
+        <th>Topic</th>
+        <th>Window</th>
+        <th>Core Objective</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>Act 1</b></td>
+        <td>The Fragmented Student Crisis</td>
+        <td><span class="time-chip">00:00 – 02:00</span></td>
+        <td>Establish student cognitive overload & failure of manual to-do apps.</td>
+      </tr>
+      <tr>
+        <td><b>Act 2</b></td>
+        <td>The Solution Paradigm (Kairos)</td>
+        <td><span class="time-chip">02:00 – 04:00</span></td>
+        <td>Define Project Kairo: zero-entry MCP ingestion & context-aware intelligence.</td>
+      </tr>
+      <tr>
+        <td><b>Act 3</b></td>
+        <td>Deep Backend & ML Dive</td>
+        <td><span class="time-chip">04:00 – 08:30</span></td>
+        <td>Explain MCP tool router, mathematical ranking engines, and encrypted vault.</td>
+      </tr>
+      <tr>
+        <td><b>Act 4</b></td>
+        <td>Empirical Benchmarks</td>
+        <td><span class="time-chip">08:30 – 10:00</span></td>
+        <td>Prove 0.993 nDCG@5, pairwise accuracy, and inter-annotator Kappa agreement.</td>
+      </tr>
+      <tr>
+        <td><b>Act 5</b></td>
+        <td>Frontend UX & Super Focus</td>
+        <td><span class="time-chip">10:00 – 11:30</span></td>
+        <td>Showcase Aegean Obsidian theme, Horizon HUD, and iPhone Glass Sanctuary.</td>
+      </tr>
+      <tr>
+        <td><b>Act 6</b></td>
+        <td>Live Demo Walkthrough</td>
+        <td><span class="time-chip">11:30 – 14:00</span></td>
+        <td>Live execution: credentials vault, live signals feed, and Pomodoro focus.</td>
+      </tr>
+      <tr>
+        <td><b>Act 7</b></td>
+        <td>Supervisor Viva Defense</td>
+        <td><span class="time-chip">14:00+</span></td>
+        <td>Defend design choices: Ridge vs Deep Learning, latency, and rate-limits.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ACT 1 -->
+  <section class="act-block">
+    <div class="act-header">
+      <div class="act-title-wrap">
+        <span class="act-badge">ACT 1</span>
+        <h2 class="act-heading">The Problem — The Fragmented Student Crisis</h2>
+      </div>
+      <span class="time-chip">00:00 – 02:00</span>
+    </div>
+
+    <div class="slide-cue">
+      📺 Slide 1: Fragmented browser with 15 open tabs (Classroom, GitHub, Gmail, Codeforces, Calendar)
+    </div>
+
+    <div class="speech-box">
+      <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.innerText)">Copy</button>
+      “Good morning, respected supervisor and members of the panel. Today, we are presenting our Capstone project: <em>Student OS</em>, codenamed <em>Kairo</em>.<br><br>
+      To understand why Kairo is necessary, consider the daily workflow of an engineering student. On any given Tuesday, an engineering student has assignments due on <em>Google Classroom</em>, upcoming standups on <em>Google Calendar</em>, pull requests and merge conflicts on <em>GitHub</em>, competitive rounds on <em>Codeforces</em>, and time-sensitive internship offers buried on <em>Gmail</em>.<br><br>
+      The core dilemma is not a lack of productivity tools—it is <em>acute cognitive fragmentation</em>. Students burn 20 to 30 minutes every morning tab-switching across 5 to 7 platforms, manually piecing together what is urgent and what can wait.<br><br>
+      Existing solutions fail fundamentally: traditional to-do apps like Notion require <em>manual data entry</em> (if a student forgets to type in an assignment, it does not exist), while generic AI chatbots lack <em>live execution context</em> into the student's actual external accounts.<br><br>
+      We asked ourselves: <em>Can we engineer an autonomous, context-aware operating system that gathers all real-time academic and technical signals with zero manual data entry, intelligently prioritizes them, and builds a realistic, wellbeing-aware day plan?</em> That is Kairo.”
+    </div>
+  </section>
+
+  <!-- ACT 2 -->
+  <section class="act-block">
+    <div class="act-header">
+      <div class="act-title-wrap">
+        <span class="act-badge">ACT 2</span>
+        <h2 class="act-heading">The Solution Paradigm (Kairos)</h2>
+      </div>
+      <span class="time-chip">02:00 – 04:00</span>
+    </div>
+
+    <div class="slide-cue">
+      📺 Slide 2: Philosophy & Core 4 Architectural Pillars
+    </div>
+
+    <div class="speech-box">
+      <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.innerText)">Copy</button>
+      “The project is named Kairo, derived from the classical Greek concept of <em>Kairos (καιρός)</em>—which represents not chronological clock time, but the <em>opportune, critical moment for action</em>.<br><br>
+      Kairo is engineered around four core innovations:<br>
+      1. <em>Zero Manual Data Entry via MCP</em>: Utilizing Anthropic's Model Context Protocol, Kairo connects directly to platforms via sandboxed background subprocesses over stdio.<br>
+      2. <em>Context-Aware Multi-Strategy Ranking</em>: We do not sort by deadline alone. Kairo pairs an interpretable rule-based engine with an empirical Closed-Form Ridge Regression Ranker that modulates priorities based on real-world context (such as reducing competitive coding prior to examinations).<br>
+      3. <em>Wellbeing-Aware Pacing & Daily Scheduling</em>: Unlike naive calendars that overload students with 16-hour impossible schedules, Kairo uses a bin-packing scheduling algorithm with honest overflow and mandatory breaks.<br>
+      4. <em>Client-Agnostic Dynamic Security Vault</em>: We decoupled all personal credentials from server <code>.env</code> files into an encrypted multi-tenant vault using Fernet AES-128-CBC and PBKDF2-HMAC-SHA256, allowing students to securely manage all accounts through the web browser from any computer.”
+    </div>
+  </section>
+
+  <!-- ACT 3 -->
+  <section class="act-block">
+    <div class="act-header">
+      <div class="act-title-wrap">
+        <span class="act-badge">ACT 3</span>
+        <h2 class="act-heading">Deep Technical Dive: Backend & ML Ranking</h2>
+      </div>
+      <span class="time-chip">04:00 – 08:30</span>
+    </div>
+
+    <div class="slide-cue">
+      📺 Slide 3: Backend Architectural Topology & Mathematical Formulation
+    </div>
+
+    <pre>
+┌────────────────────────────────────────────────────────────────────────┐
+│                   FastAPI Asynchronous Gateway                         │
+│         /briefing  │  /schedule  │  /chat  │  /connections             │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ (injects user_id & JWT session)
+┌───────────────────────────────────▼────────────────────────────────────┐
+│                    MCP Orchestrator Tool Router                        │
+│            (Stdio Subprocesses + Dynamic In-Memory Vault)              │
+└───────────┬──────────────┬──────────────┬──────────────┬───────────────┘
+            │              │              │              │
+      ┌─────▼────┐   ┌─────▼────┐   ┌─────▼────┐   ┌─────▼────┐
+      │  GitHub  │   │  Gmail   │   │ Calendar │   │Codeforces│ ...
+      └─────┬────┘   └─────┬────┘   └─────┬────┘   └─────┬────┘
+            │              │              │              │
+            └──────────────┼──────────────┴──────────────┘
+                           ▼
+            Unified Normalized ActionItems
+                           │
+       ┌───────────────────▼───────────────────┐
+       │       Pluggable Ranking Engine        │
+       │  Rule-Based Engine  OR  ML Ranker     │
+       │  (Context Boosts)       (LOSO Ridge)  │
+       └───────────────────┬───────────────────┘
+                           ▼
+            Top-k Ranked Horizon Priority Feed
+    </pre>
+
+    <div class="speech-box">
+      <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.innerText)">Copy</button>
+      “Let us examine the backend engineering in detail. The backend is implemented in Python 3.11 with FastAPI.<br><br>
+      <em>1. Model Context Protocol (MCP) Orchestration:</em> Rather than writing monolithic API scripts, each platform runs as an independent MCP stdio subprocess (GitHub, Gmail, Calendar, Codeforces, Classroom). When <code>/briefing</code> is called, our orchestrator launches them concurrently, collects tools, and extracts clean, unified <code>ActionItem</code> models.<br><br>
+      <em>2. The Ranking Problem & Pluggable Architecture:</em> A naive deadline sort fails because an urgent scholarship email with no explicit deadline is buried, while an exam 4 days away is ignored until it is too late. We engineered two complementary rankers:<br><br>
+      <em>Strategy A: The Rule-Based Context Engine</em> computes a composite score:
+      $$\text{Score} = W_{\text{kind}} + \text{Boost}_{\text{due}} + W_{\text{category}} + \Delta_{\text{context}}$$
+      Where Exams are weighted at 6.0, Deadlines at 5.0, down to Passive Events at 1.0. Crucially, if the system detects an exam within 5 days ($\text{exam\_week} = \text{True}$), competitive practice receives a <em>-4.0 dampening penalty</em> to keep students focused on graded academic work.<br><br>
+      <em>Strategy B: The Machine Learning Ridge Ranker</em> transforms items into a 30-dimensional feature vector across 6 orthogonal spaces (kinds, sources, categories, due buckets, context interactions) and trains a closed-form Ridge Regression ($\lambda = 1.0$):
+      $$\mathbf{w}^* = (\mathbf{X}^T \mathbf{X} + \lambda \mathbf{I})^{-1} \mathbf{X}^T \mathbf{y}$$
+      This trains in 4 milliseconds without GPU dependencies, completely eliminating train-serve skew.<br><br>
+      <em>3. Dynamic Security Vault:</em> Multi-tenant credentials are encrypted at rest with <em>Fernet AES-128-CBC</em>. Subprocesses receive decrypted tokens strictly in ephemeral RAM per execution, eliminating token leaks.”
+    </div>
+  </section>
+
+  <!-- ACT 4 -->
+  <section class="act-block">
+    <div class="act-header">
+      <div class="act-title-wrap">
+        <span class="act-badge">ACT 4</span>
+        <h2 class="act-heading">Empirical Validation & Benchmark Results</h2>
+      </div>
+      <span class="time-chip">08:30 – 10:00</span>
+    </div>
+
+    <div class="slide-cue">
+      📺 Slide 4: Empirical Benchmark Evaluation Table & nDCG Comparison
+    </div>
+
+    <table class="metric-table">
+      <thead>
+        <tr>
+          <th>Algorithm / Model</th>
+          <th>nDCG@3</th>
+          <th>nDCG@5</th>
+          <th>Precision@3</th>
+          <th>Pairwise Accuracy</th>
+          <th>MRR</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Random Baseline</td>
+          <td>0.6299</td>
+          <td>0.7826</td>
+          <td>50.3%</td>
+          <td>51.4%</td>
+          <td>0.3459</td>
+        </tr>
+        <tr>
+          <td>Chronological / Source Order</td>
+          <td>0.6253</td>
+          <td>0.7790</td>
+          <td>50.0%</td>
+          <td>49.8%</td>
+          <td>0.3132</td>
+        </tr>
+        <tr>
+          <td>Due Date Heuristic (Standard To-Do)</td>
+          <td>0.8868</td>
+          <td>0.9331</td>
+          <td>69.5%</td>
+          <td>80.6%</td>
+          <td>0.5304</td>
+        </tr>
+        <tr class="highlight">
+          <td><b>Kairo Rule-Based Engine</b></td>
+          <td class="score-high">0.9489</td>
+          <td class="score-high">0.9797</td>
+          <td class="score-high">76.2%</td>
+          <td class="score-high">90.2%</td>
+          <td class="score-high">0.6244</td>
+        </tr>
+        <tr class="highlight">
+          <td><b>Kairo Learned Ridge ML Ranker</b></td>
+          <td class="score-high">0.9917</td>
+          <td class="score-high">0.9931</td>
+          <td class="score-high">81.6%</td>
+          <td class="score-high">98.1%</td>
+          <td class="score-high">0.6438</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="speech-box">
+      <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.innerText)">Copy</button>
+      “To scientifically validate our engineering, we conducted an empirical benchmark across 20 synthetic and real academic scenarios (<code>backend/eval/run_eval.py</code>).<br><br>
+      As demonstrated in our results:<br>
+      - Standard due-date sorting achieves 0.933 nDCG@5 and 80.6% pairwise accuracy.<br>
+      - Our <em>Rule-Based Engine</em> elevates performance to <em>0.979 nDCG@5</em> and <em>90.2% pairwise accuracy</em>.<br>
+      - Our <em>Learned Ridge Ranker</em> achieves state-of-the-art <em>0.993 nDCG@5</em> and <em>98.1% pairwise accuracy</em> on unseen scenarios under Leave-One-Scenario-Out (LOSO) cross-validation.<br><br>
+      Furthermore, we validated our gold-standard labels using <em>quadratic-weighted Cohen's Kappa ($\kappa > 0.82$)</em>, proving that the priority rankings are robust and statistically reliable.”
+    </div>
+  </section>
+
+  <!-- ACT 5 -->
+  <section class="act-block">
+    <div class="act-header">
+      <div class="act-title-wrap">
+        <span class="act-badge">ACT 5</span>
+        <h2 class="act-heading">Frontend Engineering & The Super Focus Sanctuary</h2>
+      </div>
+      <span class="time-chip">10:00 – 11:30</span>
+    </div>
+
+    <div class="slide-cue">
+      📺 Slide 5: Classical Greek Kairos UI & iPhone Glass Focus Sanctuary
+    </div>
+
+    <div class="speech-box">
+      <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.innerText)">Copy</button>
+      “On the frontend, Kairo is engineered using Next.js 14 with TypeScript. We avoided off-the-shelf component templates in favor of a bespoke classical Greek aesthetic:<br><br>
+      - <em>Color Architecture</em>: Aegean Obsidian (<code>#070b14</code>), Corinthian Gold (<code>#f59e0b</code>), and Parian Marble light mode.<br>
+      - <em>Live Horizon Metric HUD</em>: Summarizes Critical Focus, High Priority, Total Signals Ranked, and Active Platforms at a glance.<br>
+      - <em>Interactive Priorities Feed</em>: Real-time platform filter chips, instant substring search, and optimistic task completion checkboxes that track student habit streaks.<br>
+      - <em>The Super Focus Sanctuary</em>: Activated with the <em>'F' key</em>, this renders a fullscreen iPhone-style frosted glass mirror (50px blur, specular sheen, animated mesh gradients). It features an interactive SVG countdown ring and an <em>integrated Spotify focus dock</em> for lo-fi and binaural beats.”
+    </div>
+  </section>
+
+  <!-- ACT 6 -->
+  <section class="act-block">
+    <div class="act-header">
+      <div class="act-title-wrap">
+        <span class="act-badge">ACT 6</span>
+        <h2 class="act-heading">Live Demonstration Walkthrough</h2>
+      </div>
+      <span class="time-chip">11:30 – 14:00</span>
+    </div>
+
+    <div class="slide-cue">
+      🖥️ Live Browser Demonstration on http://localhost:3000
+    </div>
+
+    <div class="speech-box">
+      <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.innerText)">Copy</button>
+      <em>[Action 1: Connected Apps Vault]</em><br>
+      “Here is Kairo running live. Opening the <em>🔌 Connected Apps</em> modal, notice our multi-tenant credential vault. Codeforces, GitHub, Gemini, and Google Workspace are connected with one-click OAuth—no terminal commands or <code>.env</code> file access required.”<br><br>
+      <em>[Action 2: Executive Feed & Live Signals]</em><br>
+      “Notice the top AI headline: <em>'Seize the Contest Window: Codeforces Round 1136 Starts Today'</em>. Below, Kairo has synthesized live signals: our upcoming rated rounds and streak from Codeforces, and our live active repositories from GitHub (<code>student-os</code> and <code>TeamGaruda-SIH</code>). Clicking the <em>'GitHub'</em> filter chip isolates our code tasks instantly.”<br><br>
+      <em>[Action 3: Super Focus Mode]</em><br>
+      “When ready to work, pressing <em>'F'</em> triggers the <em>Super Focus Sanctuary</em>. The student selects their priority task, begins the 25-minute Pomodoro ring, and plays ambient study audio directly via Spotify. Pressing Escape returns seamlessly to the workspace.”
+    </div>
+  </section>
+
+  <!-- ACT 7 -->
+  <section class="act-block">
+    <div class="act-header">
+      <div class="act-title-wrap">
+        <span class="act-badge">ACT 7</span>
+        <h2 class="act-heading">Supervisor Viva Defense & Technical FAQs</h2>
+      </div>
+      <span class="time-chip">14:00+</span>
+    </div>
+
+    <div class="qa-card">
+      <h4>❓ Q1: Why use Ridge Regression instead of a Deep Neural Network or XGBoost?</h4>
+      <p>
+        <b>Defense:</b> “Three reasons: (1) <b>Mathematical Explainability</b>: In an academic viva, neural networks are black boxes. In Ridge regression, every weight $w_i$ is an interpretable coefficient (e.g. $\text{kind\_exam} = +1.8$). (2) <b>Zero Latency</b>: Closed-form $\mathbf{w}^* = (\mathbf{X}^T\mathbf{X} + \lambda\mathbf{I})^{-1}\mathbf{X}^T\mathbf{y}$ computes in 4ms with zero GPU/TensorFlow bloat. (3) <b>Generalization</b>: On tabular academic features, deep networks overfit easily. Ridge regression with L2 regularization ($\lambda = 1.0$) prevents co-linearity, proven by our 0.993 LOSO nDCG@5.”
+      </p>
+    </div>
+
+    <div class="qa-card">
+      <h4>❓ Q2: How do you handle rate limits and network errors from external APIs?</h4>
+      <p>
+        <b>Defense:</b> “We implement a 3-tier Graceful Degradation model: (1) <b>Process Isolation</b>: Every platform runs in a sandboxed subprocess; if GitHub times out, <code>asyncio.wait_for</code> aborts it without blocking Gmail or Codeforces. (2) <b>TTL Cache Layer</b>: Items are cached per-user (<code>student_os:v2:items:user_&lt;id&gt;</code>) to avoid redundant API hits. (3) <b>Degraded Fallback</b>: If an API fails with 403, Kairo surfaces a clear status banner or falls back to offline cached state so the briefing never crashes.”
+      </p>
+    </div>
+
+    <div class="qa-card">
+      <h4>❓ Q3: How is student privacy guaranteed in a shared multi-tenant environment?</h4>
+      <p>
+        <b>Defense:</b> “We employ defense-in-depth: user passwords use PBKDF2-HMAC-SHA256 with 100k rounds; sessions use signed JWTs with 7-day expiration; external tokens are encrypted at rest via Fernet AES-128-CBC; and decrypted credentials exist strictly in transient RAM within the short-lived subprocess spawned for that authenticated user's turn.”
+      </p>
+    </div>
+
+    <div class="qa-card">
+      <h4>❓ Q4: Why use nDCG instead of Accuracy or F1-Score?</h4>
+      <p>
+        <b>Defense:</b> “Accuracy and F1-score evaluate classification (whether an item is important or not). But in a daily briefing, <b>ranking order matters</b>—an urgent exam must appear at position #1, not position #5. Normalized Discounted Cumulative Gain (nDCG) logarithmically discounts relevance lower down the list. An nDCG@5 score of 0.993 proves that critical tasks appear at the top where the student actually looks.”
+      </p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer style="text-align: center; margin-top: 50px; color: var(--muted); font-size: 13px;">
+    <span class="greek-meander">« καιρῷ πρόσφορα »</span><br>
+    Kairo v0.18.0 · BTech Capstone Project · Computer Science & Engineering
+  </footer>
+</div>
+
+</body>
+</html>

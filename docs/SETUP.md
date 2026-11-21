@@ -32,36 +32,42 @@ LLM_MODEL=claude-sonnet-5
 ```
 Without this, briefings/chat use the built-in rule-based writer (no key needed).
 
-## 3. Google — Gmail + Calendar (real, one-time consent)
+## 3. Google — Gmail + Calendar & Web SSO Authentication
 
-Gmail and Calendar are fully implemented against the real Google APIs and share
-one OAuth token. Setup:
+Kairo supports both Web Google SSO (browser login) and MCP backend sync. Setup in Google Cloud Console:
 
-1. [Google Cloud Console](https://console.cloud.google.com/) → new project.
-2. Enable the **Gmail API**, **Google Calendar API**, and **Google Classroom API**.
-3. Configure the OAuth consent screen (External; add your Google account as a
-   **test user**). Add the read-only Gmail, Calendar, and Classroom scopes.
-4. Create **OAuth client credentials** → *Desktop app* → copy the client id/secret.
-5. Put them in `.env` and turn real mode on:
-   ```
+1. [Google Cloud Console](https://console.cloud.google.com/) → Select or create your project.
+2. Enable APIs: **Gmail API**, **Google Calendar API**, and **Google Classroom API**.
+3. Configure the **OAuth consent screen**:
+   - User Type: **External**
+   - Publishing status: While in "Testing" mode, add all collaborator Google accounts (e.g. your email, teammates) under **Test users**.
+   - Add scopes: `gmail.readonly`, `calendar.readonly`, `classroom.courses.readonly`, `classroom.coursework.me.readonly`, `classroom.announcements.readonly`, `classroom.student-submissions.me.readonly`, `userinfo.email`.
+4. Create **OAuth Client ID**:
+   - Application Type: **Web application** (NOT Desktop app, to allow browser Sign-in without `Error 401: invalid_client / no registered origin`).
+   - **Authorized JavaScript origins** (CRITICAL):
+     - `http://localhost:3000`
+     - `http://localhost`
+     - `http://127.0.0.1:3000`
+     *(Note: If teammates access your server from another IP or hostname on the local network, e.g. `http://192.168.x.x:3000`, add that exact origin here too!)*
+   - **Authorized redirect URIs**:
+     - `http://localhost:3000`
+     - `http://localhost:8000/auth/google/callback`
+     - `http://127.0.0.1:8000/auth/google/callback`
+5. Put the Web Client credentials in `.env`:
+   ```env
    STUDENT_OS_MOCK=false
    GOOGLE_CLIENT_ID=...apps.googleusercontent.com
    GOOGLE_CLIENT_SECRET=...
    ```
-6. Run the one-time login (opens your browser, asks for read-only consent):
+6. (Optional) Run the CLI sync login if running headless MCP servers:
    ```bash
    cd backend
    python -m mcp_servers.common.google_auth login
    ```
-   This saves a refresh token to `backend/.google_token.json` (git-ignored).
-   From then on the Gmail/Calendar/Classroom servers read your real data and
-   refresh the token automatically. All scopes are read-only.
+   This saves a token to `backend/.google_token.json` (git-ignored).
 
-   > If you enable a new Google-backed server later (or change scopes), delete
-   > `backend/.google_token.json` and run the login command again to re-consent.
-
-If credentials or the token are missing, both servers quietly fall back to mock
-data (and print a hint to stderr), so the app never breaks.
+> **Troubleshooting `Error 401: invalid_client / no registered origin`:**
+> This error means the client was created as a "Desktop app" (which has no web origins) or the origin `http://localhost:3000` is missing from the "Authorized JavaScript origins" list in Google Cloud Console. Creating a "Web application" client ID with `http://localhost:3000` registered resolves this immediately.
 
 **Alternative:** you can instead point `servers.json` at an existing
 open-source Google Workspace MCP server — several are production-grade. Reusing
