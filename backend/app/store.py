@@ -528,6 +528,11 @@ def get_active_custom_tasks() -> list[dict]:
         return []
 
 
+def list_custom_tasks(include_done: bool = False) -> list[dict]:
+    """Return user-defined tasks (alias for get_active_custom_tasks)."""
+    return get_active_custom_tasks()
+
+
 def mark_task_done(source: str, title: str, due: str | None = None, kind: str = "task") -> bool:
     """Mark any task (custom or from MCP) as completed and reward the habit streak."""
     key = item_key(source, title, due)
