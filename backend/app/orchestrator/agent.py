@@ -16,11 +16,41 @@ from app.intelligence.scheduler import schedule_day
 from app.orchestrator import llm, mcp_manager
 from app.orchestrator.prioritizer import _exam_week
 from app.orchestrator.ranking import get_ranker
-from app.schemas import Briefing, ChatResponse
+from app.schemas import ActionItem, Briefing, ChatResponse, Priority
+
+
+def _blend_custom_and_filter_done(items: list[ActionItem], sources: list[str]) -> list[ActionItem]:
+    """Incorporate custom user tasks and remove any items marked done."""
+    custom_rows = store.get_active_custom_tasks()
+    for row in custom_rows:
+        try:
+            p = Priority(row.get("priority", "medium"))
+        except ValueError:
+            p = Priority.medium
+        score_map = {"urgent": 10.0, "high": 7.0, "medium": 4.0, "low": 1.5}
+        base_score = score_map.get(p.value, 4.0)
+        items.append(
+            ActionItem(
+                source=row.get("source", "personal"),
+                kind=row.get("kind", "task"),
+                title=row.get("title", ""),
+                detail=row.get("detail", ""),
+                due=row.get("due"),
+                priority=p,
+                score=base_score,
+                raw={"is_custom": True},
+            )
+        )
+        if "personal" not in sources:
+            sources.append("personal")
+
+    done_keys = store.get_done_item_keys()
+    return [it for it in items if store.item_key(it.source, it.title, it.due) not in done_keys]
 
 
 async def build_briefing(force_refresh: bool = False) -> Briefing:
     items, sources, _tools, cached = await mcp_manager.gather_action_items(force_refresh)
+    items = _blend_custom_and_filter_done(items, sources)
     ranker_name, rank_fn = get_ranker()
     ranked = rank_fn(items)
     exam_week = _exam_week(ranked, date.today())
@@ -39,7 +69,8 @@ async def build_briefing(force_refresh: bool = False) -> Briefing:
 
 
 async def handle_chat(message: str) -> ChatResponse:
-    items, _sources, tools, _cached = await mcp_manager.gather_action_items()
+    items, sources, tools, _cached = await mcp_manager.gather_action_items()
+    items = _blend_custom_and_filter_done(items, sources)
     _name, rank_fn = get_ranker()
     ranked = rank_fn(items)
     reply = llm.chat_reply(message, tools, ranked)
@@ -53,7 +84,8 @@ async def handle_chat(message: str) -> ChatResponse:
 
 async def build_schedule() -> dict:
     """Gather, rank, and time-block today into an actual plan."""
-    items, _sources, _tools, _cached = await mcp_manager.gather_action_items()
+    items, sources, _tools, _cached = await mcp_manager.gather_action_items()
+    items = _blend_custom_and_filter_done(items, sources)
     _name, rank_fn = get_ranker()
     ranked = rank_fn(items)
     return schedule_day(ranked, date.today())

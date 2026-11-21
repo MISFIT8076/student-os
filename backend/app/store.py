@@ -33,6 +33,7 @@ from sqlalchemy import (
     func,
     insert,
     select,
+    update,
 )
 
 from app.config import get_settings
@@ -104,6 +105,21 @@ user_connections = Table(
     Column("status", String(24), nullable=False),
     Column("meta", Text, nullable=True),
     Column("updated_at", DateTime, nullable=False),
+)
+
+custom_tasks = Table(
+    "custom_tasks",
+    _metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("item_key", String(64), nullable=False, unique=True, index=True),
+    Column("source", String(40), nullable=False, default="personal"),
+    Column("kind", String(40), nullable=False, default="task"),
+    Column("title", Text, nullable=False),
+    Column("detail", Text, nullable=False, default=""),
+    Column("due", String(40)),
+    Column("priority", String(16), nullable=False, default="medium"),
+    Column("created_at", DateTime, nullable=False),
+    Column("is_done", Integer, nullable=False, default=0),
 )
 
 VALID_ACTIONS = {"opened", "done", "dismissed", "snoozed"}
@@ -459,4 +475,109 @@ def delete_user_connection(user_id: int, provider: str) -> bool:
             )
         )
         return res.rowcount > 0
+
+
+def create_custom_task(title: str, detail: str = "", due: str | None = None,
+                       priority: str = "medium", kind: str = "task",
+                       source: str = "personal") -> dict:
+    """Create and persist a custom user-defined action item."""
+    key = item_key(source, title, due)
+    now = _now()
+    row = {
+        "item_key": key,
+        "source": source,
+        "kind": kind,
+        "title": title.strip(),
+        "detail": detail.strip(),
+        "due": due,
+        "priority": priority,
+        "created_at": now,
+        "is_done": 0,
+    }
+    with _engine().begin() as conn:
+        conn.execute(delete(custom_tasks).where(custom_tasks.c.item_key == key))
+        conn.execute(insert(custom_tasks), [row])
+    return {
+        "item_key": key,
+        "source": source,
+        "kind": kind,
+        "title": title.strip(),
+        "detail": detail.strip(),
+        "due": due,
+        "priority": priority,
+    }
+
+
+def get_active_custom_tasks() -> list[dict]:
+    """Return all unfinished user-defined tasks."""
+    try:
+        with _engine().begin() as conn:
+            rows = conn.execute(
+                select(
+                    custom_tasks.c.item_key,
+                    custom_tasks.c.source,
+                    custom_tasks.c.kind,
+                    custom_tasks.c.title,
+                    custom_tasks.c.detail,
+                    custom_tasks.c.due,
+                    custom_tasks.c.priority,
+                ).where(custom_tasks.c.is_done == 0)
+            ).mappings().all()
+            return [dict(r) for r in rows]
+    except Exception:  # noqa: BLE001
+        return []
+
+
+def mark_task_done(source: str, title: str, due: str | None = None, kind: str = "task") -> bool:
+    """Mark any task (custom or from MCP) as completed and reward the habit streak."""
+    key = item_key(source, title, due)
+    try:
+        with _engine().begin() as conn:
+            # If it's in custom_tasks, mark is_done = 1
+            conn.execute(
+                update(custom_tasks)
+                .where(custom_tasks.c.item_key == key)
+                .values(is_done=1)
+            )
+            # Record in feedback for habit streaks and viva progress tracking
+            conn.execute(
+                insert(feedback),
+                [{
+                    "ts": _now(),
+                    "item_key": key,
+                    "source": source,
+                    "kind": kind,
+                    "title": title,
+                    "action": "done",
+                }],
+            )
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def delete_custom_task(item_key_str: str) -> bool:
+    """Delete a custom task by its item key."""
+    try:
+        with _engine().begin() as conn:
+            conn.execute(delete(custom_tasks).where(custom_tasks.c.item_key == item_key_str))
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def get_done_item_keys() -> set[str]:
+    """Return keys of all items marked as done."""
+    try:
+        with _engine().begin() as conn:
+            fb_done = conn.execute(
+                select(feedback.c.item_key).where(feedback.c.action == "done")
+            ).scalars().all()
+            task_done = conn.execute(
+                select(custom_tasks.c.item_key).where(custom_tasks.c.is_done == 1)
+            ).scalars().all()
+            return set(fb_done) | set(task_done)
+    except Exception:  # noqa: BLE001
+        return set()
+
 

@@ -6,8 +6,8 @@ import ChatPanel from "@/components/ChatPanel";
 import KairoLogo from "@/components/KairoLogo";
 import ThemeToggle from "@/components/ThemeToggle";
 import FocusModeModal from "@/components/FocusModeModal";
-import { getBriefing } from "@/lib/api";
-import type { Briefing } from "@/lib/types";
+import { getBriefing, markTaskDone } from "@/lib/api";
+import type { Briefing, ActionItem } from "@/lib/types";
 
 export default function Home() {
   const [briefing, setBriefing] = useState<Briefing | null>(null);
@@ -46,7 +46,16 @@ export default function Home() {
     setLoading(true);
     setError(null);
     try {
-      setBriefing(await getBriefing(refresh));
+      const data = await getBriefing(refresh);
+      // Filter out any locally recorded done items
+      const doneKeys = JSON.parse(localStorage.getItem("kairo_done_keys") || "[]") as string[];
+      if (doneKeys.length > 0) {
+        data.items = data.items.filter((it) => {
+          const k = `${it.source}|${it.title.trim().toLowerCase()}|${it.due || ""}`;
+          return !doneKeys.includes(k);
+        });
+      }
+      setBriefing(data);
     } catch (e) {
       setError(
         `Could not reach the Kairo Core API. Ensure uvicorn is active on http://127.0.0.1:8000. (${(e as Error).message})`
@@ -59,6 +68,84 @@ export default function Home() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const handleMarkDone = useCallback(async (item: ActionItem) => {
+    // 1. Optimistic removal from state
+    setBriefing((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        items: prev.items.filter(
+          (it) =>
+            !(
+              it.title === item.title &&
+              it.source === item.source &&
+              (it.due ?? "") === (item.due ?? "")
+            )
+        ),
+      };
+    });
+
+    // 2. Persist in local storage
+    try {
+      const k = `${item.source}|${item.title.trim().toLowerCase()}|${item.due || ""}`;
+      const doneKeys = JSON.parse(localStorage.getItem("kairo_done_keys") || "[]") as string[];
+      if (!doneKeys.includes(k)) {
+        doneKeys.push(k);
+        localStorage.setItem("kairo_done_keys", JSON.stringify(doneKeys));
+      }
+    } catch {
+      // ignore localstorage errors
+    }
+
+    // 3. Inform backend
+    try {
+      await markTaskDone({
+        source: item.source,
+        title: item.title,
+        due: item.due,
+        kind: item.kind,
+      });
+    } catch (err) {
+      console.warn("Backend done tracking warning:", err);
+    }
+  }, []);
+
+  const handleCreateTask = useCallback((newTask: ActionItem) => {
+    setBriefing((prev) => {
+      if (!prev) {
+        return {
+          generated_at: new Date().toISOString(),
+          headline: newTask.title,
+          summary: "Custom action item created by student.",
+          items: [newTask],
+          sources_used: [newTask.source],
+          llm_used: false,
+          cached: false,
+        };
+      }
+      const updated = [newTask, ...prev.items];
+      const priorityWeights: Record<string, number> = {
+        urgent: 4,
+        high: 3,
+        medium: 2,
+        low: 1,
+      };
+      updated.sort((a, b) => {
+        const diff =
+          (priorityWeights[b.priority] || 2) - (priorityWeights[a.priority] || 2);
+        if (diff !== 0) return diff;
+        return b.score - a.score;
+      });
+      return {
+        ...prev,
+        items: updated,
+        sources_used: prev.sources_used.includes(newTask.source)
+          ? prev.sources_used
+          : [...prev.sources_used, newTask.source],
+      };
+    });
+  }, []);
 
   const urgentCount =
     briefing?.items.filter((i) => i.priority === "urgent").length ?? 0;
@@ -139,6 +226,8 @@ export default function Home() {
           loading={loading}
           error={error}
           onRefresh={() => load(true)}
+          onMarkDone={handleMarkDone}
+          onCreateTask={handleCreateTask}
         />
         <ChatPanel />
       </div>
@@ -173,6 +262,7 @@ export default function Home() {
         isOpen={isFocusOpen}
         onClose={() => setIsFocusOpen(false)}
         items={briefing?.items ?? []}
+        onMarkDone={handleMarkDone}
       />
     </main>
   );
