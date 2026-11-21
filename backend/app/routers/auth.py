@@ -82,6 +82,13 @@ def login(req: UserLoginRequest) -> Any:
     }
 
 
+@router.get("/google/client-id")
+def get_google_client_id() -> dict[str, str]:
+    """Return the configured public Google OAuth Client ID for frontend GIS initialization."""
+    from app.config import get_settings
+    return {"client_id": get_settings().google_client_id}
+
+
 @router.post("/google", response_model=AuthResponse)
 def google_auth(req: GoogleAuthRequest) -> Any:
     """Authenticate with Google OAuth. Accepts credential JWT or parsed Google profile."""

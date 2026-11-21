@@ -22,12 +22,13 @@ from app.cache import get_cache
 from app.config import BACKEND_ROOT, get_settings
 from app.schemas import ActionItem, Priority, ToolInfo
 
-_CACHE_VERSION = "v1"
+_CACHE_VERSION = "v2"
 
 
-def _cache_key() -> str:
+def _cache_key(user_id: int | None = None) -> str:
     mode = "mock" if get_settings().student_os_mock else "real"
-    return f"student_os:{_CACHE_VERSION}:items:{mode}"
+    u = f"user_{user_id}" if user_id else "global"
+    return f"student_os:{_CACHE_VERSION}:items:{u}:{mode}"
 
 
 def _load_registry() -> list[dict]:
@@ -66,6 +67,7 @@ def _child_env(user_id: int | None = None) -> dict[str, str]:
             from app.store import list_user_connections
 
             vault = TokenVault()
+            has_connected_apps = False
             for conn in list_user_connections(user_id):
                 if conn.get("status") == "connected" and conn.get("encrypted_credentials"):
                     try:
@@ -74,13 +76,24 @@ def _child_env(user_id: int | None = None) -> dict[str, str]:
                         prov = conn.get("provider")
                         if prov == "github" and creds.get("token"):
                             env["GITHUB_TOKEN"] = creds["token"]
-                            env["STUDENT_OS_MOCK"] = "false"
+                            has_connected_apps = True
                         elif prov == "codeforces" and creds.get("handle"):
                             env["CODEFORCES_HANDLE"] = creds["handle"]
+                            has_connected_apps = True
                         elif prov == "gemini" and creds.get("api_key"):
                             env["GEMINI_API_KEY"] = creds["api_key"]
+                        elif prov == "google" and creds:
+                            google_data = dict(creds)
+                            if settings.google_client_id and "client_id" not in google_data:
+                                google_data["client_id"] = settings.google_client_id
+                            if settings.google_client_secret and "client_secret" not in google_data:
+                                google_data["client_secret"] = settings.google_client_secret
+                            env["GOOGLE_TOKEN_JSON"] = json.dumps(google_data)
+                            has_connected_apps = True
                     except Exception:
                         pass
+            if has_connected_apps:
+                env["STUDENT_OS_MOCK"] = "false"
         except Exception:
             pass
 
@@ -96,14 +109,12 @@ def _parse_tool_result(result: Any) -> list[dict]:
         block's text being the JSON of a single item — so we must decode each
         block independently rather than concatenating them.
     """
-    # Preferred: typed/structured output when the SDK provides it.
     structured = getattr(result, "structuredContent", None)
     if isinstance(structured, dict) and "result" in structured:
         structured = structured["result"]
     if isinstance(structured, list):
         return [x for x in structured if isinstance(x, dict)]
 
-    # Fallback: JSON encoded in text content blocks, one block per item.
     items: list[dict] = []
     for block in getattr(result, "content", []) or []:
         text = getattr(block, "text", None)
@@ -134,12 +145,7 @@ def _to_action_item(server: str, raw: dict) -> ActionItem:
 
 
 def _resolve_command(command: str) -> str:
-    """Use the virtualenv interpreter if available, otherwise the running interpreter.
-
-    servers.json says "python", but a bare "python" can resolve to a different
-    interpreter than the project's venv (common on Windows), causing ModuleNotFoundError.
-    Pinning to backend/.venv ensures all MCP servers run with full dependencies installed.
-    """
+    """Use the virtualenv interpreter if available, otherwise the running interpreter."""
     if command in ("python", "python3"):
         venv_win = BACKEND_ROOT / ".venv" / "Scripts" / "python.exe"
         if venv_win.exists():
@@ -152,12 +158,12 @@ def _resolve_command(command: str) -> str:
     return command
 
 
-async def _collect_from_server(spec: dict) -> tuple[list[ActionItem], list[ToolInfo]]:
+async def _collect_from_server(spec: dict, user_id: int | None = None) -> tuple[list[ActionItem], list[ToolInfo]]:
     """Launch one server, call all its tools, return normalized items + tools."""
     params = StdioServerParameters(
         command=_resolve_command(spec["command"]),
         args=spec.get("args", []),
-        env=_child_env(),
+        env=_child_env(user_id),
     )
     items: list[ActionItem] = []
     tools: list[ToolInfo] = []
@@ -183,11 +189,7 @@ async def _collect_from_server(spec: dict) -> tuple[list[ActionItem], list[ToolI
 
 
 def _dedupe(items: list[ActionItem]) -> list[ActionItem]:
-    """Drop duplicates that surface from more than one tool on a server.
-
-    (e.g. Gmail's 'priority_unread' and 'internship_mail' both return the same
-    internship email.) Identity = source + title + due.
-    """
+    """Drop duplicates that surface from more than one tool on a server."""
     seen: set[tuple[str, str, str]] = set()
     out: list[ActionItem] = []
     for it in items:
@@ -199,14 +201,14 @@ def _dedupe(items: list[ActionItem]) -> list[ActionItem]:
     return out
 
 
-async def _gather_raw() -> tuple[list[ActionItem], list[str], list[ToolInfo]]:
+async def _gather_raw(user_id: int | None = None) -> tuple[list[ActionItem], list[str], list[ToolInfo]]:
     """Internal loop over all registered servers to collect items and tools."""
     all_items: list[ActionItem] = []
     sources: list[str] = []
     all_tools: list[ToolInfo] = []
     for spec in _load_registry():
         try:
-            items, tools = await _collect_from_server(spec)
+            items, tools = await _collect_from_server(spec, user_id=user_id)
             all_items.extend(items)
             all_tools.extend(tools)
             sources.append(spec["name"])
@@ -217,17 +219,15 @@ async def _gather_raw() -> tuple[list[ActionItem], list[str], list[ToolInfo]]:
     return all_items, sources, all_tools
 
 
-def _gather_raw_in_proactor_thread() -> tuple[list[ActionItem], list[str], list[ToolInfo]]:
-    """Run gathering in a thread with a ProactorEventLoop (required on Windows with uvicorn --reload)."""
+def _gather_raw_in_proactor_thread(user_id: int | None = None) -> tuple[list[ActionItem], list[str], list[ToolInfo]]:
+    """Run gathering in a thread with a ProactorEventLoop (required on Windows with uvicorn)."""
     import asyncio
     import logging
     _log = logging.getLogger(__name__)
-    _log.debug("Entered _gather_raw_in_proactor_thread")
     loop = asyncio.WindowsProactorEventLoopPolicy().new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        res = loop.run_until_complete(_gather_raw())
-        _log.debug("_gather_raw_in_proactor_thread finished with %d items", len(res[0]))
+        res = loop.run_until_complete(_gather_raw(user_id=user_id))
         return res
     except Exception as e:
         _log.error("ERR in _gather_raw_in_proactor_thread: %s: %s", type(e).__name__, e)
@@ -238,15 +238,11 @@ def _gather_raw_in_proactor_thread() -> tuple[list[ActionItem], list[str], list[
 
 async def gather_action_items(
     force_refresh: bool = False,
+    user_id: int | None = None,
 ) -> tuple[list[ActionItem], list[str], list[ToolInfo], bool]:
-    """Fan out across every enabled MCP server and merge their items.
-
-    Returns (items, sources, tools, cached). Results are cached for a short TTL
-    so repeated /briefing and /chat calls don't relaunch every server; pass
-    force_refresh=True to bypass the cache.
-    """
+    """Fan out across every enabled MCP server and merge their items."""
     cache = get_cache()
-    key = _cache_key()
+    key = _cache_key(user_id)
 
     if not force_refresh:
         hit = cache.get(key)
@@ -258,9 +254,9 @@ async def gather_action_items(
     import asyncio
     running_loop = asyncio.get_running_loop()
     if sys.platform == "win32" and not isinstance(running_loop, getattr(asyncio, "ProactorEventLoop", ())):
-        all_items, sources, all_tools = await asyncio.to_thread(_gather_raw_in_proactor_thread)
+        all_items, sources, all_tools = await asyncio.to_thread(_gather_raw_in_proactor_thread, user_id)
     else:
-        all_items, sources, all_tools = await _gather_raw()
+        all_items, sources, all_tools = await _gather_raw(user_id)
 
     deduped = _dedupe(all_items)
     cache.set(
@@ -275,7 +271,7 @@ async def gather_action_items(
     return deduped, sources, all_tools, False
 
 
-async def list_all_tools() -> list[ToolInfo]:
+async def list_all_tools(user_id: int | None = None) -> list[ToolInfo]:
     """Discover every tool across servers (used by the chat router)."""
-    _items, _sources, tools, _cached = await gather_action_items()
+    _items, _sources, tools, _cached = await gather_action_items(user_id=user_id)
     return tools

@@ -10,6 +10,7 @@ from typing import Any, Optional
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 
 from app.auth import get_current_user
 from app.schemas import (
@@ -61,17 +62,9 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
     },
     "google": {
         "title": "Google Workspace (Gmail, Calendar, Classroom)",
-        "description": "Consolidate coursework submissions, exam events, and recruiter emails.",
+        "description": "Consolidate coursework submissions, exam events, and recruiter emails with one-click OAuth.",
         "icon": "google",
-        "fields": [
-            ConnectionField(
-                name="token",
-                label="OAuth Refresh Token / Token JSON",
-                type="password",
-                placeholder="Paste token or connect via Google Sign-In",
-                help_text="Read-only permissions for Gmail, Calendar, and Classroom.",
-            )
-        ],
+        "fields": [],
     },
     "gemini": {
         "title": "Google Gemini AI (LLM Provider)",
@@ -191,12 +184,91 @@ async def _verify_credentials(provider: str, creds: dict[str, Any]) -> tuple[boo
                 return False, f"Telegram API unreachable: {e}", {}
 
     elif provider == "google":
-        token = creds.get("token", "").strip()
-        if not token:
-            return False, "Google token is required", {}
-        return True, "Google Workspace token configured", {"provider": "google"}
+        token = creds.get("token", "") or creds.get("refresh_token", "")
+        if token:
+            return True, "Google Workspace token configured", {"provider": "google"}
+        return False, "Google Workspace requires clicking 'Connect with Google'", {}
 
     return False, f"Unknown provider '{provider}'", {}
+
+
+class GoogleCodeExchangeRequest(BaseModel):
+    code: str
+    redirect_uri: Optional[str] = None
+
+
+@router.post("/google/exchange-code", response_model=ConnectionTestResult)
+async def exchange_google_code(
+    req: GoogleCodeExchangeRequest,
+    current_user: dict = Depends(get_current_user),
+) -> Any:
+    """Exchange an OAuth authorization code from browser Google consent for tokens."""
+    from app.config import get_settings
+
+    settings = get_settings()
+    if not settings.google_client_id or not settings.google_client_secret:
+        raise HTTPException(
+            status_code=400,
+            detail="GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET not configured on server",
+        )
+
+    redirect_uri = (
+        req.redirect_uri
+        or "postmessage"
+    )
+
+    token_url = "https://oauth2.googleapis.com/token"
+    data = {
+        "code": req.code,
+        "client_id": settings.google_client_id,
+        "client_secret": settings.google_client_secret,
+        "redirect_uri": redirect_uri,
+        "grant_type": "authorization_code",
+    }
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(token_url, data=data)
+        if resp.status_code != 200:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Google token exchange failed: {resp.text}",
+            )
+        tokens = resp.json()
+
+    user_email = ""
+    if tokens.get("access_token"):
+        try:
+            async with httpx.AsyncClient(timeout=8.0) as client:
+                u_resp = await client.get(
+                    "https://www.googleapis.com/oauth2/v2/userinfo",
+                    headers={"Authorization": f"Bearer {tokens['access_token']}"},
+                )
+                if u_resp.status_code == 200:
+                    user_email = u_resp.json().get("email", "")
+        except Exception:
+            pass
+
+    encrypted = vault.encrypt(json.dumps(tokens))
+    test_data = {
+        "account": user_email or current_user["email"],
+        "services": "Gmail, Google Calendar, Classroom",
+        "status": "Active (OAuth Connected)",
+    }
+
+    upsert_user_connection(
+        user_id=current_user["id"],
+        provider="google",
+        encrypted_credentials=encrypted,
+        status="connected",
+        meta=test_data,
+    )
+
+    return {
+        "provider": "google",
+        "ok": True,
+        "message": f"Successfully linked Google Workspace ({user_email or 'active'})",
+        "data": test_data,
+    }
 
 
 @router.get("", response_model=list[ConnectionOut])

@@ -19,8 +19,8 @@ from app.orchestrator.ranking import get_ranker
 from app.schemas import Briefing, ChatResponse
 
 
-async def build_briefing(force_refresh: bool = False) -> Briefing:
-    items, sources, _tools, cached = await mcp_manager.gather_action_items(force_refresh)
+async def build_briefing(force_refresh: bool = False, user_id: int | None = None) -> Briefing:
+    items, sources, _tools, cached = await mcp_manager.gather_action_items(force_refresh, user_id=user_id)
     ranker_name, rank_fn = get_ranker()
     ranked = rank_fn(items)
     exam_week = _exam_week(ranked, date.today())
@@ -38,8 +38,8 @@ async def build_briefing(force_refresh: bool = False) -> Briefing:
     )
 
 
-async def handle_chat(message: str) -> ChatResponse:
-    items, _sources, tools, _cached = await mcp_manager.gather_action_items()
+async def handle_chat(message: str, user_id: int | None = None) -> ChatResponse:
+    items, _sources, tools, _cached = await mcp_manager.gather_action_items(user_id=user_id)
     _name, rank_fn = get_ranker()
     ranked = rank_fn(items)
     reply = llm.chat_reply(message, tools, ranked)
@@ -51,17 +51,17 @@ async def handle_chat(message: str) -> ChatResponse:
     )
 
 
-async def build_schedule() -> dict:
+async def build_schedule(user_id: int | None = None) -> dict:
     """Gather, rank, and time-block today into an actual plan."""
-    items, _sources, _tools, _cached = await mcp_manager.gather_action_items()
+    items, _sources, _tools, _cached = await mcp_manager.gather_action_items(user_id=user_id)
     _name, rank_fn = get_ranker()
     ranked = rank_fn(items)
     return schedule_day(ranked, date.today())
 
 
-async def build_opportunities() -> list[dict]:
+async def build_opportunities(user_id: int | None = None) -> list[dict]:
     """Gather items and surface the ones worth tracking (with saved status)."""
-    items, _sources, _tools, _cached = await mcp_manager.gather_action_items()
+    items, _sources, _tools, _cached = await mcp_manager.gather_action_items(user_id=user_id)
     return collect_opportunities(items)
 
 

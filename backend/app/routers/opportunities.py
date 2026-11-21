@@ -1,9 +1,12 @@
 """Opportunity radar endpoints: list opportunities and track application status."""
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException
 
 from app import store
+from app.auth import get_optional_current_user
 from app.orchestrator.agent import build_opportunities
 from app.schemas import OpportunityStatusRequest
 
@@ -11,8 +14,11 @@ router = APIRouter(tags=["opportunities"])
 
 
 @router.get("/opportunities")
-async def get_opportunities() -> list[dict]:
-    return await build_opportunities()
+async def get_opportunities(
+    current_user: Optional[dict] = Depends(get_optional_current_user),
+) -> list[dict]:
+    user_id = current_user["id"] if current_user else None
+    return await build_opportunities(user_id=user_id)
 
 
 @router.post("/opportunities/status")

@@ -83,11 +83,27 @@ def login() -> None:
 
 
 def has_credentials() -> bool:
-    return TOKEN_PATH.exists()
+    return bool(os.getenv("GOOGLE_TOKEN_JSON")) or TOKEN_PATH.exists()
 
 
 def get_credentials() -> Any | None:
     """Load stored credentials, refreshing them if expired. None if missing."""
+    token_json_env = os.getenv("GOOGLE_TOKEN_JSON")
+    if token_json_env:
+        try:
+            import json
+            from google.auth.transport.requests import Request
+            from google.oauth2.credentials import Credentials
+
+            data = json.loads(token_json_env)
+            creds = Credentials.from_authorized_user_info(data, SCOPES)
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            return creds
+        except Exception as exc:
+            import sys
+            print(f"[google_auth] failed to load GOOGLE_TOKEN_JSON: {exc}", file=sys.stderr)
+
     if not TOKEN_PATH.exists():
         return None
     from google.auth.transport.requests import Request

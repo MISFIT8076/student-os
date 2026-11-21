@@ -5,13 +5,10 @@ GitHub: open pull requests they authored, issues assigned to them, and
 unread notifications.
 
 Runs in two modes:
-  * REAL  — when GITHUB_TOKEN is set and STUDENT_OS_MOCK is false, it calls
+  * REAL  — when GITHUB_TOKEN is set or user is connected, it calls
             the GitHub REST API (https://api.github.com).
   * MOCK  — otherwise it returns realistic sample data so the whole system
             works with zero setup.
-
-This is the reference implementation. Gmail and Calendar follow the same
-shape; copy this file to add a new platform.
 """
 from __future__ import annotations
 
@@ -34,7 +31,9 @@ def _token() -> str:
 
 
 def _use_real() -> bool:
-    return bool(_token()) and not mock_enabled()
+    if bool(_token()):
+        return True
+    return not mock_enabled()
 
 
 def _get(path: str, params: dict[str, Any] | None = None) -> Any:
@@ -78,7 +77,9 @@ def list_open_pull_requests() -> list[dict]:
             }
             for it in data.get("items", [])
         ]
-    except Exception as exc:  # noqa: BLE001 — degrade gracefully to mock
+    except Exception as exc:  # noqa: BLE001
+        if _use_real():
+            return [_error_item("list_open_pull_requests", exc)]
         return [_error_item("list_open_pull_requests", exc)] + _MOCK_PRS
 
 
@@ -105,6 +106,8 @@ def list_assigned_issues() -> list[dict]:
             for it in data.get("items", [])
         ]
     except Exception as exc:  # noqa: BLE001
+        if _use_real():
+            return [_error_item("list_assigned_issues", exc)]
         return [_error_item("list_assigned_issues", exc)] + _MOCK_ISSUES
 
 
@@ -129,14 +132,45 @@ def list_notifications() -> list[dict]:
             for n in data
         ]
     except Exception as exc:  # noqa: BLE001
+        if _use_real():
+            return [_error_item("list_notifications", exc)]
         return [_error_item("list_notifications", exc)] + _MOCK_NOTIFS
+
+
+@mcp.tool()
+def list_recent_repositories() -> list[dict]:
+    """List recently updated repositories for the student."""
+    if not _use_real():
+        return []
+    try:
+        repos = _get(
+            "/user/repos",
+            {"sort": "updated", "per_page": 5, "affiliation": "owner,collaborator"},
+        )
+        return [
+            {
+                "kind": "repository",
+                "title": f"Repository: {r['name']}",
+                "detail": f"{r.get('description') or 'Active GitHub repo'} · Updated {r.get('updated_at', '')[:10]}",
+                "url": r.get("html_url"),
+                "due": None,
+                "extra": {
+                    "stars": r.get("stargazers_count", 0),
+                    "forks": r.get("forks_count", 0),
+                    "private": r.get("private", False),
+                },
+            }
+            for r in repos
+        ]
+    except Exception:
+        return []
 
 
 def _error_item(tool: str, exc: Exception) -> dict:
     return {
         "kind": "error",
         "title": f"GitHub API error in {tool}",
-        "detail": f"{type(exc).__name__}: {exc}. Showing sample data instead.",
+        "detail": f"{type(exc).__name__}: {exc}.",
         "url": None,
         "due": None,
         "extra": {},
@@ -148,44 +182,35 @@ _MOCK_PRS = [
     {
         "kind": "pull_request",
         "title": "Add MCP orchestrator tool router",
-        "detail": "student-os #42 · review requested",
-        "url": "https://github.com/example/student-os/pull/42",
+        "detail": "student-os #14 · review requested",
+        "url": "https://github.com/example/student-os/pull/14",
         "due": None,
         "extra": {"comments": 3},
-    },
-    {
-        "kind": "pull_request",
-        "title": "Fix Gmail token refresh edge case",
-        "detail": "student-os #45",
-        "url": "https://github.com/example/student-os/pull/45",
-        "due": None,
-        "extra": {"comments": 0},
     },
 ]
 
 _MOCK_ISSUES = [
     {
         "kind": "issue",
-        "title": "Prioritizer over-weights old emails",
-        "detail": "student-os #38",
-        "url": "https://github.com/example/student-os/issues/38",
+        "title": "Implement token refresh loop for Google OAuth",
+        "detail": "student-os #9",
+        "url": "https://github.com/example/student-os/issues/9",
         "due": None,
-        "extra": {"labels": ["bug", "orchestrator"]},
+        "extra": {"labels": ["enhancement", "auth"]},
     },
 ]
 
 _MOCK_NOTIFS = [
     {
         "kind": "notification",
-        "title": "@varsha requested changes on your PR",
-        "detail": "example/student-os · review_requested",
-        "url": "https://github.com/example/student-os/pull/42",
+        "title": "Reviewed PR #12: Fix caching in memory store",
+        "detail": "example/student-os · mention",
+        "url": "https://github.com/example/student-os/pull/12",
         "due": None,
         "extra": {"type": "PullRequest"},
     },
 ]
 
-
-if __name__ == "__main__":
-    # stdio transport — the orchestrator launches this as a subprocess.
+if __name__ == '__main__':
     mcp.run()
+

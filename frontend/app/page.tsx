@@ -5,14 +5,23 @@ import BriefingPanel from "@/components/BriefingPanel";
 import ChatPanel from "@/components/ChatPanel";
 import KairoLogo from "@/components/KairoLogo";
 import ThemeToggle from "@/components/ThemeToggle";
-import { getBriefing } from "@/lib/api";
-import type { Briefing } from "@/lib/types";
+import AuthModal from "@/components/AuthModal";
+import IntegrationsModal from "@/components/IntegrationsModal";
+import { getBriefing, getStoredUser, clearAuth, getConnections } from "@/lib/api";
+import type { Briefing, User } from "@/lib/types";
 
 export default function Home() {
   const [briefing, setBriefing] = useState<Briefing | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentDateStr, setCurrentDateStr] = useState<string>("");
+
+  // Auth & Integrations state
+  const [user, setUser] = useState<User | null>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [integrationsModalOpen, setIntegrationsModalOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [connectedAppsCount, setConnectedAppsCount] = useState<number>(0);
 
   useEffect(() => {
     const today = new Date();
@@ -22,6 +31,17 @@ export default function Home() {
       day: "numeric",
     });
     setCurrentDateStr(formatted);
+    setUser(getStoredUser());
+    refreshConnectionsCount();
+  }, []);
+
+  const refreshConnectionsCount = useCallback(async () => {
+    try {
+      const conns = await getConnections();
+      setConnectedAppsCount(conns.filter((c) => c.is_connected).length);
+    } catch {
+      // Mock/unauthed fallback
+    }
   }, []);
 
   const load = useCallback(async (refresh = false) => {
@@ -41,6 +61,14 @@ export default function Home() {
   useEffect(() => {
     load();
   }, [load]);
+
+  function handleSignOut() {
+    clearAuth();
+    setUser(null);
+    setUserMenuOpen(false);
+    refreshConnectionsCount();
+    load(true);
+  }
 
   const urgentCount =
     briefing?.items.filter((i) => i.priority === "urgent").length ?? 0;
@@ -63,10 +91,76 @@ export default function Home() {
             <span className="status-platform-text">5 MCP Tools Active</span>
           </div>
 
+          {/* Connected Apps Hub Button */}
+          <button
+            type="button"
+            className="apps-hub-trigger"
+            onClick={() => setIntegrationsModalOpen(true)}
+            title="Configure API keys, handles, and tool connections"
+          >
+            <span>🔌 Connected Apps</span>
+            {connectedAppsCount > 0 ? (
+              <span className="status-tag connected">{connectedAppsCount}/5</span>
+            ) : (
+              <span className="status-tag pending">Setup</span>
+            )}
+          </button>
+
           <a className="nav-btn-link" href="/progress" title="View historical habits and streaks">
             <span>Progress & Habits</span>
             <span className="nav-arrow">→</span>
           </a>
+
+          {/* User Profile / Sign In */}
+          {user ? (
+            <div className="user-profile-menu-wrap">
+              <button
+                type="button"
+                className="user-profile-trigger"
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+              >
+                <div className="user-avatar-circle">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <span>{user.name.split(" ")[0]}</span>
+                <span style={{ fontSize: "10px" }}>▾</span>
+              </button>
+
+              {userMenuOpen && (
+                <div className="user-dropdown-card">
+                  <div style={{ padding: "6px 12px", borderBottom: "1px solid var(--border-subtle)" }}>
+                    <div style={{ fontSize: "12px", fontWeight: 600 }}>{user.name}</div>
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>{user.email}</div>
+                  </div>
+                  <button
+                    type="button"
+                    className="user-dropdown-item"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      setIntegrationsModalOpen(true);
+                    }}
+                  >
+                    <span>⚙️ App Connections</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="user-dropdown-item signout"
+                    onClick={handleSignOut}
+                  >
+                    <span>🚪 Sign Out</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="btn-signin-nav"
+              onClick={() => setAuthModalOpen(true)}
+            >
+              <span>✦ Sign In</span>
+            </button>
+          )}
 
           <ThemeToggle />
         </div>
@@ -139,6 +233,27 @@ export default function Home() {
           </a>
         </div>
       </footer>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={(loggedUser) => {
+          setUser(loggedUser);
+          refreshConnectionsCount();
+          load(true);
+        }}
+      />
+
+      {/* Connected Apps & Integrations Modal */}
+      <IntegrationsModal
+        isOpen={integrationsModalOpen}
+        onClose={() => setIntegrationsModalOpen(false)}
+        onConnectionsUpdated={() => {
+          refreshConnectionsCount();
+          load(true);
+        }}
+      />
     </main>
   );
 }

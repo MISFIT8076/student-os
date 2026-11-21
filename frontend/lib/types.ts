@@ -80,3 +80,47 @@ export interface OpportunityItem {
   url?: string | null;
   status: "new" | "saved" | "applied" | "interviewing" | "accepted" | "rejected" | string;
 }
+
+// ── Auth & Connections Types ───────────────────────────────────────────────
+export interface User {
+  id: number;
+  email: string;
+  name: string;
+  avatar_url?: string | null;
+  created_at: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  user: User;
+}
+
+export interface ConnectionField {
+  name: string;
+  label: string;
+  type: string;
+  placeholder?: string;
+  required?: boolean;
+  help_text?: string;
+}
+
+export interface ConnectionOut {
+  provider: string;
+  title: string;
+  description: string;
+  icon: string;
+  is_connected: boolean;
+  status: string;
+  meta: Record<string, any>;
+  updated_at?: string | null;
+  fields: ConnectionField[];
+}
+
+export interface ConnectionTestResult {
+  provider: string;
+  ok: boolean;
+  message: string;
+  data?: Record<string, any> | null;
+}
+
