@@ -48,25 +48,66 @@ def _fallback_briefing(items: list[ActionItem], exam_week: bool) -> tuple[str, s
 
 def _fallback_chat(message: str, tools: list[ToolInfo], items: list[ActionItem]) -> str:
     msg = message.lower()
-    # Naive intent routing that mirrors what the LLM would do with tools.
-    if any(w in msg for w in ("github", "pr", "pull request", "issue")):
-        picks = [i for i in items if i.source == "github"]
-    elif any(w in msg for w in ("email", "mail", "internship")):
-        picks = [i for i in items if i.source == "gmail"]
-    elif any(w in msg for w in ("deadline", "calendar", "exam", "due", "today")):
-        picks = [i for i in items if i.source == "calendar"]
-    else:
-        picks = items[:4]
+    
+    # Priority & Opportune moment synthesis
+    if any(w in msg for w in ("priority", "#1", "first", "start", "what should i do")):
+        if items:
+            top = items[0]
+            due_str = f" (due {top.due})" if top.due else ""
+            second = f"\n• Follow-up: {items[1].title}" if len(items) > 1 else ""
+            return (
+                f"🏛️ **The Opportune Moment (Kairos):**\n\n"
+                f"Your #1 focus right now is **{top.title}** [{top.source.upper()}]{due_str}.\n\n"
+                f"💡 **Recommendation:** Lock in a 45-minute deep focus block now before addressing lower-priority interruptions.{second}"
+            )
+        return "You have no active urgent tasks right now. Use this time for forward preparation or rest."
 
+    # Study block planning
+    if any(w in msg for w in ("plan", "focus", "block", "schedule", "study")):
+        if items:
+            top_items = items[:3]
+            plan_lines = "\n".join([f"• **Session {idx+1} ({45}m):** {item.title}" for idx, item in enumerate(top_items)])
+            return (
+                f"⏱️ **Synthesized Focus Block:**\n\n"
+                f"{plan_lines}\n\n"
+                f"⚡ Interleave with 10-minute rest intervals to sustain peak cognitive endurance."
+            )
+        return "Your queue is clear. I recommend a 90-minute open exploration block."
+
+    # GitHub / Code reviews
+    if any(w in msg for w in ("github", "pr", "pull request", "issue", "review")):
+        picks = [i for i in items if i.source == "github"]
+        if picks:
+            lines = [f"• **{i.title}**" + (f" — due {i.due}" if i.due else "") for i in picks[:5]]
+            return f"⑂ **Active GitHub Deliverables ({len(picks)}):**\n" + "\n".join(lines)
+        return "No pending GitHub PRs or code reviews requiring your immediate attention."
+
+    # Emails & Career notices
+    if any(w in msg for w in ("email", "mail", "internship", "job", "career")):
+        picks = [i for i in items if i.source == "gmail"]
+        if picks:
+            lines = [f"• **{i.title}**" + (f" — {i.detail}" if i.detail else "") for i in picks[:5]]
+            return f"📬 **Relevant Email Announcements ({len(picks)}):**\n" + "\n".join(lines)
+        return "No unread critical emails or internship announcements found in your recent sync."
+
+    # Exams & Deadlines
+    if any(w in msg for w in ("deadline", "calendar", "exam", "due", "today", "countdown")):
+        picks = [i for i in items if i.due or i.source in ("calendar", "canvas")]
+        if picks:
+            lines = [f"• **{i.title}**" + (f" — *due {i.due}*" if i.due else "") for i in picks[:5]]
+            return f"🎓 **Approaching Deadlines & Calendar Events:**\n" + "\n".join(lines)
+        return "No hard deadlines recorded for today. Great job staying ahead of your schedule!"
+
+    # Default overview
+    picks = items[:4]
     if not picks:
         tool_names = ", ".join(sorted({t.server for t in tools})) or "no servers"
         return (
-            "I couldn't find anything matching that. "
-            f"Connected sources right now: {tool_names}. "
-            "Try 'what should I do today?' or 'show my GitHub PRs'."
+            "I am the Oracle of Kairo. Connected platforms: "
+            f"{tool_names}. Ask me 'What is my top priority?' or 'Plan a 2-hour study block'."
         )
-    lines = [f"• {i.title}" + (f" — due {i.due}" if i.due else "") for i in picks[:5]]
-    return "Here's what I found:\n" + "\n".join(lines)
+    lines = [f"• **{i.title}** [{i.source}]" + (f" — due {i.due}" if i.due else "") for i in picks]
+    return "🏛️ **Kairo Context Overview:**\n" + "\n".join(lines)
 
 
 # ── real LLM (optional) ─────────────────────────────────────────────────────
@@ -89,29 +130,51 @@ def _gemini_text(system: str, user: str) -> str | None:
     settings = get_settings()
     if not settings.gemini_api_key:
         return None
+    import sys
     import httpx
 
-    model = settings.gemini_model.strip()
-    if not model.startswith("models/"):
-        model = f"models/{model}"
+    configured = settings.gemini_model.strip()
+    # Ordered fallback cascade: configured model first, followed by resilient models
+    candidates: list[str] = [configured]
+    for fallback in [
+        "gemini-flash-lite-latest",
+        "gemini-3.5-flash-lite",
+        "gemini-3-flash-preview",
+    ]:
+        if fallback not in candidates and fallback != configured:
+            candidates.append(fallback)
 
-    url = (
-        f"https://generativelanguage.googleapis.com/v1beta/"
-        f"{model}:generateContent?key={settings.gemini_api_key}"
-    )
-    payload = {
-        "system_instruction": {"parts": [{"text": system}]},
-        "contents": [{"role": "user", "parts": [{"text": user}]}],
-        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 600},
-    }
-    try:
-        with httpx.Client(timeout=30) as client:
-            resp = client.post(url, json=payload)
-            resp.raise_for_status()
-            data = resp.json()
-            return data["candidates"][0]["content"]["parts"][0]["text"]
-    except Exception:
-        return None
+    for cand in candidates:
+        model = cand if cand.startswith("models/") else f"models/{cand}"
+        url = (
+            f"https://generativelanguage.googleapis.com/v1beta/"
+            f"{model}:generateContent?key={settings.gemini_api_key}"
+        )
+        payload = {
+            "system_instruction": {"parts": [{"text": system}]},
+            "contents": [{"role": "user", "parts": [{"text": user}]}],
+            "generationConfig": {"temperature": 0.4, "maxOutputTokens": 800},
+        }
+        try:
+            with httpx.Client(timeout=20) as client:
+                resp = client.post(url, json=payload)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    candidates_out = data.get("candidates", [])
+                    if candidates_out and "content" in candidates_out[0]:
+                        parts = candidates_out[0]["content"].get("parts", [])
+                        if parts and "text" in parts[0]:
+                            return parts[0]["text"]
+                else:
+                    print(
+                        f"[Oracle/LLM] Model {model} returned {resp.status_code}: {resp.text[:100]}",
+                        file=sys.stderr,
+                    )
+        except Exception as exc:
+            print(f"[Oracle/LLM] Request to {model} failed: {exc}", file=sys.stderr)
+            continue
+
+    return None
 
 
 def _anthropic_text(system: str, user: str) -> str | None:
