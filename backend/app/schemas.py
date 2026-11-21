@@ -98,6 +98,26 @@ class ConfirmActionRequest(BaseModel):
     token: str
 
 
+class CreateTaskRequest(BaseModel):
+    """User-created manual task."""
+
+    title: str = Field(..., description="Action item title")
+    detail: str = Field(default="", description="Additional notes or context")
+    due: Optional[str] = Field(default=None, description="Optional deadline date/time")
+    priority: Priority = Field(default=Priority.medium, description="urgent | high | medium | low")
+    kind: str = Field(default="task", description="deadline | exam | project | practice | task")
+    source: str = Field(default="personal", description="personal | college | custom")
+
+
+class MarkDoneRequest(BaseModel):
+    """Mark an item as done."""
+
+    source: str
+    title: str
+    due: Optional[str] = None
+    kind: str = Field(default="task")
+
+
 # ── Auth & Connection Schemas ───────────────────────────────────────────────
 class UserRegisterRequest(BaseModel):
     email: str

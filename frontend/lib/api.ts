@@ -4,6 +4,7 @@ import type {
   Progress,
   DaySchedule,
   OpportunityItem,
+  ActionItem,
   User,
   AuthResponse,
   ConnectionOut,
@@ -220,6 +221,36 @@ export function updateOpportunityStatus(req: {
     method: "POST",
     body: JSON.stringify(req),
   });
+}
+
+export function createTask(req: {
+  title: string;
+  detail?: string;
+  due?: string | null;
+  priority?: string;
+  kind?: string;
+  source?: string;
+}): Promise<ActionItem> {
+  return json<ActionItem>("/tasks", {
+    method: "POST",
+    body: JSON.stringify(req),
+  });
+}
+
+export function markTaskDone(req: {
+  source: string;
+  title: string;
+  due?: string | null;
+  kind?: string;
+}): Promise<{ ok: boolean }> {
+  return json<{ ok: boolean }>("/tasks/done", {
+    method: "POST",
+    body: JSON.stringify(req),
+  });
+}
+
+export function getTasks(): Promise<ActionItem[]> {
+  return json<ActionItem[]>("/tasks");
 }
 
 export { API_BASE };

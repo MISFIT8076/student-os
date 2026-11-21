@@ -20,6 +20,7 @@ from app.routers import (
     opportunities,
     schedule,
     study,
+    tasks,
 )
 
 settings = get_settings()
@@ -48,6 +49,7 @@ app.include_router(notify.router)
 app.include_router(opportunities.router)
 app.include_router(actions.router)
 app.include_router(study.router)
+app.include_router(tasks.router)
 
 
 @app.get("/health", tags=["meta"])
